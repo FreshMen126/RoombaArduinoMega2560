@@ -4,6 +4,7 @@
 #define broadcast 115200
 
 void Roomba_init();         //инициализирует румбу
+void Roomba_Wake_Up();      //будим румбу
 void Roomba_Start_Full();   //запускает режим FULL
 //устанавливает и запускает светодиоды на румбе
 void Roomba_Set_LED(bool debrisLED, bool spotLED, bool dockLED, bool checkLED, byte color, byte intensity);

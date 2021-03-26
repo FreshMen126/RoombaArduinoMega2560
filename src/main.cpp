@@ -1,8 +1,10 @@
 #include "main.h"
 
 void setup() {
-  Roomba_init();
+  pinMode(rx_PIN, OUTPUT);
+  pinMode(tx_PIN, OUTPUT);
   pinMode(LED_PIN, OUTPUT);
+  Roomba_init();
 }
 
 void loop() {

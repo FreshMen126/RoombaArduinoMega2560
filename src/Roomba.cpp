@@ -4,6 +4,7 @@ void Roomba_init()  //инициализирует румбу
 {
     Roomba.begin(broadcast);    //инициализирует UART на частоте broadcast
     delay(second);              //задержка секунда
+    Roomba_Wake_Up();           //будит румбу
     Roomba_Start_Full();        //инициализирует работу румбы на режиме Full
 
     Roomba_Set_LED(false, false, false, false, 0, 255);
@@ -13,6 +14,16 @@ void Roomba_init()  //инициализирует румбу
     Roomba_Set_LED(false, false, false, false, 0, 255);
     delay(second);
     Roomba_Set_LED(true, true, true, false, 0, 255);
+}
+
+void Roomba_Wake_Up()   //будим румбу
+{
+  digitalWrite(dd_PIN, HIGH);
+  delay(100);
+  digitalWrite(dd_PIN, LOW);
+  delay(500);
+  digitalWrite(dd_PIN, HIGH);
+  delay(2*second);
 }
 
 void Roomba_Start_Full()    //запускает режим FULL
