@@ -1,9 +1,13 @@
-#include <Arduino.h>
+#include "main.h"
 
 void setup() {
-  // put your setup code here, to run once:
+  Roomba_init();
+  pinMode(LED_PIN, OUTPUT);
 }
 
 void loop() {
-  // put your main code here, to run repeatedly:
+  digitalWrite(LED_PIN, HIGH);
+  delay(second);
+  digitalWrite(LED_PIN, LOW);
+  delay(second);
 }
