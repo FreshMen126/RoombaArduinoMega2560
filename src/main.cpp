@@ -1,15 +1,17 @@
 #include "main.h"
 
-void setup() {
+void setup() 
+{
   pinMode(rx_PIN, OUTPUT);
   pinMode(tx_PIN, OUTPUT);
   pinMode(LED_PIN, OUTPUT);
   Roomba_init();
 }
 
-void loop() {
+void loop() 
+{
   digitalWrite(LED_PIN, HIGH);
-  delay(second);
+  delay(0.5*second);
   digitalWrite(LED_PIN, LOW);
-  delay(second);
+  delay(0.5*second);
 }

@@ -2,6 +2,7 @@
 
 void Roomba_init()  //инициализирует румбу
 {
+    pinMode(dd_PIN, OUTPUT);
     Roomba.begin(broadcast);    //инициализирует UART на частоте broadcast
     delay(second);              //задержка секунда
     Roomba_Wake_Up();           //будит румбу
