@@ -7,6 +7,7 @@ void Roomba_init()  //инициализирует румбу
     delay(second);              //задержка секунда
     Roomba_Wake_Up();           //будит румбу
     Roomba_Start_Full();        //инициализирует работу румбы на режиме Full
+    Roomba_Play_Song(1);
 
     Roomba_Set_LED(false, false, false, false, 0, 255);   //устанавливает и запускает светодиоды на румбе
     delay(0.5*second);
@@ -46,38 +47,42 @@ void Roomba_Set_LED(bool debrisLED, bool spotLED, bool dockLED, bool checkLED, b
   Roomba.write(intensity);  //интенсивность 
 }
 
-void Roomba_Go_Forward() 
+sbyte2 Roomba_Compare(sbyte2 compare, sbyte2 min, sbyte2 max)   //команда ограничения между max и min
 {
-  Roomba.write(137);    //команда езды
-  Roomba.write(0x00);
-  Roomba.write(0xc8);
-  Roomba.write(0x80);
-  Roomba.write(0x00);
+  if (compare < min)        //сравнение с min
+  compare = min; 
+  else if (compare > max)   //сравнение с max
+  compare = max;
+  return(compare);          //возврат значения
 }
 
-void Roomba_Go_Back() 
+void Roomba_Go(sbyte2 velocity, sbyte2 radius)    //Команда езды румбы со скоростью и радиусом 
 {
-  Roomba.write(137);    //команда езды
-  Roomba.write(0xff);
-  Roomba.write(0x38);
-  Roomba.write(0x80);
-  Roomba.write(0x00);
+  velocity = Roomba_Compare(velocity, -500, 500);  //ограничение скорость 500 мм/с
+  radius = Roomba_Compare(radius, -2000, 2000);  //ограничение радиуса 2000 мм
+
+  Roomba.write(137);            //Команда езды
+  Roomba.write(velocity >> 8);  //устанавливаем скорость в high byte (мм/с) 
+  Roomba.write(velocity);       //устанавливаем скорость в low byte
+  Roomba.write(radius >> 8);    //устанавливаем радиус в high byte (мм)
+  Roomba.write(radius);         //устанавливаем радиус в low byte
 }
 
-void Roomba_Go_Left() 
+void Roomba_Play_Song(byte song)    //команда запуска музыки от 0 до 4
 {
-  Roomba.write(137);    //команда езды
-  Roomba.write(0x00);
-  Roomba.write(0xc8);
-  Roomba.write(0x00);
-  Roomba.write(0x01);
+  Roomba.write(141);            //команда запуски музыки
+  Roomba_Compare(song, 0, 4);   //ограничение от 0 до 4
+  Roomba.write(song);           //устанавливаем музыку
 }
 
-void Roomba_Go_Right() 
+void Roomba_GoDirect(sbyte2 right, sbyte2 left) //управление движением колес вперед и назад
 {
-  Roomba.write(137);    //команда езды
-  Roomba.write(0x00);
-  Roomba.write(0xc8);
-  Roomba.write(0xff);
-  Roomba.write(0xff);
+  right = Roomba_Compare(right, -500, 500);  //ограничение скорость 500 мм/с
+  left = Roomba_Compare(left, -500, 500);  //ограничение скорость 500 мм/с
+ 
+  Roomba.write(145);            //Команда езды
+  Roomba.write(right >> 8);  //устанавливаем скорость правого колеса в high byte (мм/с) 
+  Roomba.write(right);       //устанавливаем скорость правого колеса в low byte
+  Roomba.write(left >> 8);    //устанавливаем скорость левого колеса в high byte (мм)
+  Roomba.write(left);         //устанавливаем скорость левого колеса в low byte
 }

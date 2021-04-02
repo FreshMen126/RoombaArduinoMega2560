@@ -1,5 +1,6 @@
 #define byte uint8_t    //байт
-
+#define byte2 uint16_t  //2 байта
+#define sbyte2 int16_t  //2 байта с отрицательными знаениями
 
 #define rx_PIN 17       //rx 2
 #define tx_PIN 16       //tx 2
