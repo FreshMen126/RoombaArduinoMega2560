@@ -2,26 +2,29 @@
 
 void Roomba_init()  //инициализирует румбу
 {
+    pinMode(dd_PIN, OUTPUT);
     Roomba.begin(broadcast);    //инициализирует UART на частоте broadcast
     delay(second);              //задержка секунда
     Roomba_Wake_Up();           //будит румбу
     Roomba_Start_Full();        //инициализирует работу румбы на режиме Full
 
-    Roomba_Set_LED(false, false, false, false, 0, 255);
-    delay(second);
+    Roomba_Set_LED(false, false, false, false, 0, 255);   //устанавливает и запускает светодиоды на румбе
+    delay(0.5*second);
     Roomba_Set_LED(true, true, true, false, 0, 255);
-    delay(second);
+    delay(0.5*second);
     Roomba_Set_LED(false, false, false, false, 0, 255);
-    delay(second);
+    delay(0.5*second);
     Roomba_Set_LED(true, true, true, false, 0, 255);
+    delay(0.5*second);
+    Roomba_Set_LED(false, true, true, false, 0, 255);
 }
 
 void Roomba_Wake_Up()   //будим румбу
 {
   digitalWrite(dd_PIN, HIGH);
-  delay(100);
+  delay(0.1*second);
   digitalWrite(dd_PIN, LOW);
-  delay(500);
+  delay(0.5*second);
   digitalWrite(dd_PIN, HIGH);
   delay(2*second);
 }
@@ -41,4 +44,40 @@ void Roomba_Set_LED(bool debrisLED, bool spotLED, bool dockLED, bool checkLED, b
   Roomba.write(LED_Bits);   //посылаем биты
   Roomba.write(color);      //посылаем цвет (0 - зеленый, 255 - красный)
   Roomba.write(intensity);  //интенсивность 
+}
+
+void Roomba_Go_Forward() 
+{
+  Roomba.write(137);    //команда езды
+  Roomba.write(0x00);
+  Roomba.write(0xc8);
+  Roomba.write(0x80);
+  Roomba.write(0x00);
+}
+
+void Roomba_Go_Back() 
+{
+  Roomba.write(137);    //команда езды
+  Roomba.write(0xff);
+  Roomba.write(0x38);
+  Roomba.write(0x80);
+  Roomba.write(0x00);
+}
+
+void Roomba_Go_Left() 
+{
+  Roomba.write(137);    //команда езды
+  Roomba.write(0x00);
+  Roomba.write(0xc8);
+  Roomba.write(0x00);
+  Roomba.write(0x01);
+}
+
+void Roomba_Go_Right() 
+{
+  Roomba.write(137);    //команда езды
+  Roomba.write(0x00);
+  Roomba.write(0xc8);
+  Roomba.write(0xff);
+  Roomba.write(0xff);
 }
