@@ -1,5 +1,22 @@
 #include "main.h"
 
+byte EncoderCounts_Left = 0;
+byte EncoderCounts_Right = 0;
+byte LightBumper_LeftCenter = 0;
+byte LightBumper_RightCenter = 0;
+byte Check_EncoderCounts_Left = 0;
+byte Check_EncoderCounts_Right = 0;
+byte Check_LightBumper_LeftCenter = 0;
+byte Check_LightBumper_RightCenter = 0;
+byte StreamArray[] = 
+{
+    Sensor_LightBumper_LeftCenter,
+    Sensor_LightBumper_RightCenter,
+    Sensor_EncoderCounts_Left,
+    Sensor_EncoderCounts_Right,
+    Sensor_Buttons,
+};
+
 void Roomba_init()  //инициализирует румбу
 {
   pinMode(dd_PIN, OUTPUT);
@@ -8,6 +25,7 @@ void Roomba_init()  //инициализирует румбу
   Roomba_Wake_Up();           //будит румбу
   Roomba_Start_Full();        //инициализирует работу румбы на режиме Full
   Roomba_Init_Song();         //инициализация мелодий
+  Roomba_Stream(StreamArray,5); //говорим какие датчики трансировать
   Roomba_Play_Song(0);        //проигрование мелодии запуска
 
   Roomba_Set_LED(false, false, false, false, 0, 255);   //устанавливает и запускает светодиоды на румбе
@@ -31,30 +49,20 @@ void Roomba_init()  //инициализирует румбу
 
 void Roomba_Loop()      //сама программа румбы
 {
-  Roomba_Go(50,0);
+  Roomba_GoDirect(50, 50);
   delay(second);
-  Roomba_Go(-50,0);
-  delay(second);
-  Roomba_Go(50,100);
-  delay(second);
-  Roomba_Go(-50,100);
-  delay(second);
-  Roomba_Go(0,0);
-  delay(second);
-  Roomba_GoDirect(500, 0);
-  delay(second);
-  Roomba_GoDirect(0, 500);  
+  Roomba_GoDirect(-50, -50);  
   delay(second);
   Roomba_Stop();
 }
 
-void Roomba_Stream(const byte *StreamArray, byte StreamLength)      //транслирует данные с датчиков
+void Roomba_Stream(const byte *StreamArrayCount, byte StreamLength)      //транслирует данные с датчиков (задаем датчики)
 {
   Roomba.write(148);
   Roomba.write(StreamLength);
   for (int i = 0; i < StreamLength; i++)
   {
-    Roomba.write(StreamArray[i]);
+    Roomba.write(StreamArrayCount[i]);
   }
 }
 
@@ -82,7 +90,6 @@ void Roomba_Reset()     //перезагружает румбу
 
 void Roomba_Stop()      //выключает румбу
 {
-  Roomba_Go(0,0);
   Roomba_GoDirect(0, 0);
   Roomba_Play_Song(3);
   Roomba.write(173);
@@ -124,31 +131,65 @@ void Roomba_GoDirect(sbyte2 right, sbyte2 left) //управление движ�
   right = Roomba_Compare(right, -500, 500);  //ограничение скорость 500 мм/с
   left = Roomba_Compare(left, -500, 500);  //ограничение скорость 500 мм/с
  
-  Roomba.write(145);            //Команда езды
-  Roomba.write(right >> 8);  //устанавливаем скорость правого колеса в high byte (мм/с) 
-  Roomba.write(right);       //устанавливаем скорость правого колеса в low byte
+  Roomba.write(145);          //Команда езды
+  Roomba.write(right >> 8);   //устанавливаем скорость правого колеса в high byte (мм/с) 
+  Roomba.write(right);        //устанавливаем скорость правого колеса в low byte
   Roomba.write(left >> 8);    //устанавливаем скорость левого колеса в high byte (мм)
   Roomba.write(left);         //устанавливаем скорость левого колеса в low byte
 }
 
-/*
+byte Roomba_ReadByte()
+{
+  byte RoombaRead = Roomba.read();
+  return RoombaRead;
+}
+
 byte Roomba_Sensors_Pack(byte pack)       //то, что возвращают сенсоры
 {
-  if (pack == 7)          //bumps and wheel drops
+  if (pack == Sensor_EncoderCounts_Left)  //если левый энкодер
   {
-
+    byte ReadHigh = Roomba_ReadByte();    //записываем high byte
+    byte ReadLow = Roomba_ReadByte();     //записываем low byte
+    Check_EncoderCounts_Left = (ReadLow<<8)|(ReadLow);    //соединяем и запоминаем в один байт
+    return (ReadHigh + ReadLow);          //возвращаем
   }
+  return 0;
 }
 
 bool Roomba_Sensors_Pack_Check()
 {
-  int SensorsPack = 0;            //вводим переменную, которая будет хранить информацию сенсоров
+  int SensorID = 0;             //вводим переменную, которая будет хранить id датчика
+  byte WaitCounter = 0;         //вводим переменную, которая будет хранить количество датчиков
+  byte Total = 0;               //вводим переменную, которая будет хранить общую сумму (должна равна быть 256)
   if (Roomba.available() > 0)     //если есть доступные данные
   {
-    
+    if (Roomba_ReadByte() == 19)  //если прислал 19, то это данные с датчиков
+    {
+      WaitCounter = Roomba_ReadByte();   //прочитали n-bytes
+      Total = 19 + WaitCounter;          //суммируем данные
+      for (byte i = 0; i < WaitCounter; i++)  //цикл считывания и суммирования
+      {
+        SensorID = Roomba_ReadByte();                       //записываем ID датчика
+        Total += SensorID + Roomba_Sensors_Pack(SensorID);  //суммируем ID и информацию с него 
+      }
+      byte LastInfo = Roomba_ReadByte();      //читаем последний байт (check)
+      if ((Total+LastInfo)==256)
+      {
+        EncoderCounts_Left = Check_EncoderCounts_Left;
+        EncoderCounts_Right = Check_EncoderCounts_Right;
+        LightBumper_LeftCenter = Check_LightBumper_LeftCenter;
+        LightBumper_RightCenter = Check_LightBumper_RightCenter;
+
+        return true;
+      }
+      else 
+      {
+        return false;
+      }
+    }
+    return false;
   }
 }
-*/
 
 void Roomba_Play_Song(byte song)    //команда запуска музыки от 0 до 4
 {
