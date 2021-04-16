@@ -53,6 +53,11 @@
 #define Sensor_BrushMottorCurrent_Side 57   //-32768-32767  Ток боковой щетки мА
 #define Sensor_Statis 58                    //0-3           Колесо стазиса
 
+#define Song_Start Roomba_Play_Song(0)
+#define Song_Good Roomba_Play_Song(1)
+#define Song_Bad Roomba_Play_Song(2)
+#define Song_Sleep Roomba_Play_Song(3)
+
 void Roomba_init();         //инициализирует румбу
 void Roomba_Loop();      //сама программа румбы
 void Roomba_Wake_Up();      //будим румбу
@@ -64,6 +69,8 @@ void Roomba_Stream(const byte *StreamArray, byte StreamLength); //трансли
 sbyte2 Roomba_Compare(sbyte2 compare, sbyte2 min, sbyte2 max);  //команда ограничения между max и min
 void Roomba_Go(sbyte2 velocity, sbyte2 radius); //Команда езды румбы со скоростью и радиусом 
 void Roomba_GoDirect(sbyte2 right, sbyte2 left); //управление движением колес вперед и назад
+byte Roomba_Sensors_Pack(byte pack);       //то, что возвращают сенсоры
+bool Roomba_Sensors_Pack_Check();           //принимаем данные с датчиков и проверяем
 void Roomba_Play_Song(byte song);    //команда запуска музыки от 0 до 4
 void Roomba_Init_Song();         //команда сохраняющая в памяти музыку (инициализация)
 /*

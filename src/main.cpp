@@ -1,18 +1,18 @@
 #include "main.h"
+#include "stdio.h"
 
 void setup() 
 {
   pinMode(rx_PIN, OUTPUT);
   pinMode(tx_PIN, OUTPUT);
   pinMode(LED_PIN, OUTPUT);
+  Serial.begin(9600);
   Roomba_init();
 }
 
+int a = 0;
+
 void loop() 
 {
-  digitalWrite(LED_PIN, HIGH);
-  delay(0.5*second);
-  digitalWrite(LED_PIN, LOW);
-  delay(0.5*second);
   Roomba_Loop();
 }
