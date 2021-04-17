@@ -10,9 +10,8 @@ void setup()
   Roomba_init();
 }
 
-int a = 0;
-
 void loop() 
 {
   Roomba_Loop();
+  //Serial.print(" ");
 }
