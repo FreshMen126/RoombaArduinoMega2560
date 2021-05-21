@@ -13,5 +13,4 @@ void setup()
 void loop() 
 {
   Roomba_Loop();
-  //Serial.print(" ");
 }
