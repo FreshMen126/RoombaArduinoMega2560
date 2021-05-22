@@ -44,18 +44,24 @@ typedef enum
 } StatusDrive;                     //группа для управления движения
 StatusDrive statusDrive = Forward; //переменная группы управления движения
 uint64_t timeStateBump = 0;        //переменная таймера при врезании
+sbyte2 LastRight = 0;              //последние данные правого колеса
+sbyte2 LastLeft = 0;               //последние данные левого колеса
+sbyte2 LastVelocity = 0;           //последние данные скорости
+sbyte2 LastRadius = 0;             //последние данные радиуса
 
 void Roomba_init() //инициализирует румбу
 {
   pinMode(dd_PIN, OUTPUT);
-  Roomba.begin(broadcast); //инициализирует UART на частоте broadcast
-  delay(second);           //задержка секунда
-  Roomba_Wake_Up();        //будит румбу
-  Roomba_Start_Full();     //инициализирует работу румбы на режиме Full
-  //Roomba_Init_Song();                          //инициализация мелодий
+  Roomba.begin(broadcast);                     //инициализирует UART на частоте broadcast
+  delay(second);                               //задержка секунда
+  Roomba_Wake_Up();                            //будит румбу
+  Roomba_Start_Full();                         //инициализирует работу румбы на режиме Full
+  Roomba_Init_Song();                          //инициализация мелодий
   Roomba_Stream(StreamArray, QuantitySensors); //говорим какие датчики трансировать
-  //Song_Start;                     //проигрование мелодии запуска
+  delay(0.5 * second);
+  Song_Start;                                  //проигрование мелодии запуска
 
+  delay(0.5 * second);
   Roomba_Set_LED(true, true, true, false, 0, 255); //устанавливает и запускает светодиоды на румбе
   delay(0.5 * second);
   Roomba_Set_LED(false, false, false, false, 0, 255);
@@ -65,6 +71,7 @@ void Roomba_init() //инициализирует румбу
   Roomba_Set_LED(false, false, false, false, 0, 255);
   delay(0.5 * second);
   Roomba_Set_LED(false, true, true, false, 0, 255);
+  delay(0.5 * second);
 }
 bool Povtorenya;
 void Roomba_Loop() //сама программа румбы
@@ -73,12 +80,12 @@ void Roomba_Loop() //сама программа румбы
   if (statusDrive == Forward)
   {
     Povtorenya = false;
-    Roomba_GoDirect(100, 100);
+    Roomba_GoDirect(150, 150);
   }
   else if (statusDrive == Back)
   {
-    Roomba_GoDirect(-300, -300);
-    if (millis() - timeStateBump > 200)
+    Roomba_GoDirect(-200, -200);
+    if (millis() - timeStateBump > 400)
     {
       timeStateBump = millis();
       statusDrive = Left;
@@ -86,8 +93,8 @@ void Roomba_Loop() //сама программа румбы
   }
   else if (statusDrive == Left)
   {
-    Roomba_GoDirect(300, -300);
-    if (millis() - timeStateBump > 200)
+    Roomba_GoDirect(200, -200);
+    if (millis() - timeStateBump > 400)
     {
       statusDrive = Forward;
     }
@@ -127,20 +134,20 @@ void Roomba_Loop() //сама программа румбы
       if (Buttons == 6)
         Roomba_Reset();
 
-     if (BumpsAndWheelDrops == 1 or BumpsAndWheelDrops == 2 or 
-        BumpsAndWheelDrops == 3 or BumpsAndWheelDrops == 5 or
-        BumpsAndWheelDrops == 6 or BumpsAndWheelDrops == 7 or 
-        BumpsAndWheelDrops == 9 or BumpsAndWheelDrops == 10 or
-        BumpsAndWheelDrops == 11 or LightBumper_Left > 80 or 
-        LightBumper_LeftCenter > 80 or LightBumper_RightCenter > 80 or
-        LightBumper_Right > 80)
-     {
-        if (statusDrive != Back) 
+      if (BumpsAndWheelDrops == 1 or BumpsAndWheelDrops == 2 or
+          BumpsAndWheelDrops == 3 or BumpsAndWheelDrops == 5 or
+          BumpsAndWheelDrops == 6 or BumpsAndWheelDrops == 7 or
+          BumpsAndWheelDrops == 9 or BumpsAndWheelDrops == 10 or
+          BumpsAndWheelDrops == 11 or LightBumper_Left > 40 or
+          LightBumper_LeftCenter > 40 or LightBumper_RightCenter > 40 or
+          LightBumper_Right > 40)
+      {
+        if (statusDrive != Back)
         {
           timeStateBump = millis();
         }
         statusDrive = Back;
-     }
+      }
     }
   }
 }
@@ -171,15 +178,15 @@ void Roomba_Start_Full() //запускает режим FULL
 void Roomba_Reset() //перезагружает румбу
 {
   Roomba_GoDirect(0, 0); //стопает движение румбы
-  //Song_Sleep;            //музыка сна
-  Roomba.write(7); //команда перезагрузки
+  Song_Sleep;            //музыка сна
+  Roomba.write(7);       //команда перезагрузки
 }
 
 void Roomba_Stop() //выключает румбу
 {
   Roomba_GoDirect(0, 0); //стопает движение румбы
-  //Song_Sleep;            //музыка сна
-  Roomba.write(173); //команда выключения
+  Song_Sleep;            //музыка сна
+  Roomba.write(173);     //команда выключения
 }
 
 void Roomba_Set_LED(bool debrisLED, bool spotLED, bool dockLED, bool checkLED, byte color, byte intensity) //устанавливает и запускает светодиоды на румбе
@@ -200,21 +207,22 @@ sbyte2 Roomba_Compare(sbyte2 compare, sbyte2 min, sbyte2 max) //команда �
   return (compare);       //возврат значения
 }
 
-sbyte2 LastRight = 0;
-sbyte2 LastLeft = 0;
-sbyte2 LastVelocity = 0;
-sbyte2 LastRadius = 0;
-
 void Roomba_Go(sbyte2 velocity, sbyte2 radius) //Команда езды румбы со скоростью и радиусом
 {
   velocity = Roomba_Compare(velocity, -500, 500); //ограничение скорость 500 мм/с
   radius = Roomba_Compare(radius, -2000, 2000);   //ограничение радиуса 2000 мм
 
-  Roomba.write(137);           //Команда езды
-  Roomba.write(velocity >> 8); //устанавливаем скорость в high byte (мм/с)
-  Roomba.write(velocity);      //устанавливаем скорость в low byte
-  Roomba.write(radius >> 8);   //устанавливаем радиус в high byte (мм)
-  Roomba.write(radius);        //устанавливаем радиус в low byte
+  if (LastVelocity != velocity or LastRadius != radius) //если не равно, то отправляем данные (для оптимизации кода, чтобы не отправлял каждый раз)
+  {
+    Roomba.write(137);           //Команда езды
+    Roomba.write(velocity >> 8); //устанавливаем скорость в high byte (мм/с)
+    Roomba.write(velocity);      //устанавливаем скорость в low byte
+    Roomba.write(radius >> 8);   //устанавливаем радиус в high byte (мм)
+    Roomba.write(radius);        //устанавливаем радиус в low byte
+  }
+
+  LastVelocity = velocity; //последние данные скорости
+  LastRadius = radius;     //последние данные радиуса
 }
 
 void Roomba_GoDirect(sbyte2 right, sbyte2 left) //управление движением колес вперед и назад
@@ -222,7 +230,7 @@ void Roomba_GoDirect(sbyte2 right, sbyte2 left) //управление движ�
   right = Roomba_Compare(right, -500, 500); //ограничение скорость 500 мм/с
   left = Roomba_Compare(left, -500, 500);   //ограничение скорость 500 мм/с
 
-  if (LastRight != right or LastLeft != left)
+  if (LastRight != right or LastLeft != left) //если не равно, то отправляем данные (для оптимизации кода, чтобы не отправлял каждый раз)
   {
     Roomba.write(145);        //Команда езды
     Roomba.write(right >> 8); //устанавливаем скорость правого колеса в high byte (мм/с)
@@ -230,8 +238,9 @@ void Roomba_GoDirect(sbyte2 right, sbyte2 left) //управление движ�
     Roomba.write(left >> 8);  //устанавливаем скорость левого колеса в high byte (мм)
     Roomba.write(left);       //устанавливаем скорость левого колеса в low byte
   }
-  LastRight = right;
-  LastLeft = left;
+
+  LastRight = right; //последние данные правого колеса
+  LastLeft = left;   //последние данные левого колеса
 }
 
 byte Roomba_ReadByte() //команда считывает данные с румбы
