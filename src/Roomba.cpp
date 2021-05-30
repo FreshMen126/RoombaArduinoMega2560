@@ -1,158 +1,184 @@
 #include "main.h"
 
-int BumpsAndWheelDrops = 0;            //Истинные данные бампера и колес (простой вариант)
-int CliffSignal_Left = 0;              //Истинные данные обрыва слева
-int CliffSignal_FrontLeft = 0;         //Истинные данные обрыва слева спереди
-byte Buttons = 0;                      //Истинные данные кнопок
-int EncoderCounts_Left = 0;            //Истинные данные энкодер левый
-int EncoderCounts_Right = 0;           //Истинные данные энкодер правый
-int LightBumper_Left = 0;              //Истинные данные световой бампер левый
-int LightBumper_LeftCenter = 0;        //Истинные данные световой бампер левый центральный
-int LightBumper_RightCenter = 0;       //Истинные данные световой бампер правый центральный
-int LightBumper_Right = 0;             //Истинные данные световой бампер правый
-int Check_BumpsAndWheelDrops = 0;      //Проверяемые данные бампера и колес (простой вариант)
-int Check_CliffSignal_Left = 0;        //Проверяемые данные обрыва слева
-int Check_CliffSignal_FrontLeft = 0;   //Проверяемые данные обрыва слева спереди
-byte Check_Buttons = 0;                //Проверяемые данные кнопок
-int Check_EncoderCounts_Left = 0;      //Проверяемые данные энкодер левый
-int Check_EncoderCounts_Right = 0;     //Проверяемые данные энкодер правый
-int Check_LightBumper_Left = 0;        //Проверяемые данные световой бампер правый
-int Check_LightBumper_LeftCenter = 0;  //Проверяемые данные световой бампер левый центральный
-int Check_LightBumper_RightCenter = 0; //Проверяемые данные световой бампер правый центральный
-int Check_LightBumper_Right = 0;       //Проверяемые данные световой бампер правый
-byte StreamArray[] =
+byte bumpsAndWheelDrops = 0;         //Истинные данные бампера и колес (простой вариант)
+byte buttons = 0;                    //Истинные данные кнопок
+int distance = 0;                    //Истинные данные дистанции
+int cliffSignalLeft = 0;             //Истинные данные обрыва слева
+int cliffSignalFrontLeft = 0;        //Истинные данные обрыва слева спереди
+int encoderCountsLeft = 0;           //Истинные данные энкодер левый
+int encoderCountsRight = 0;          //Истинные данные энкодер правый
+byte lightBumper = 0;                //Истинные данные со световых бамперов
+int lightBumperLeft = 0;             //Истинные данные световой бампер левый
+int lightBumperLeftCenter = 0;       //Истинные данные световой бампер левый центральный
+int lightBumperRightCenter = 0;      //Истинные данные световой бампер правый центральный
+int lightBumperRight = 0;            //Истинные данные световой бампер правый
+byte checkBumpsAndWheelDrops = 0;    //Проверяемые данные бампера и колес (простой вариант)
+byte checkButtons = 0;               //Проверяемые данные кнопок
+int checkDistance = 0;               //Проверяемые данные дистанции
+int checkCliffSignalLeft = 0;        //Проверяемые данные обрыва слева
+int checkCliffSignalFrontLeft = 0;   //Проверяемые данные обрыва слева спереди
+int checkEncoderCountsLeft = 0;      //Проверяемые данные энкодер левый
+int checkEncoderCountsRight = 0;     //Проверяемые данные энкодер правый
+byte checkLightBumper = 0;           //Проверяемые данные со световых бамперов
+int checkLightBumperLeft = 0;        //Проверяемые данные световой бампер правый
+int checkLightBumperLeftCenter = 0;  //Проверяемые данные световой бампер левый центральный
+int checkLightBumperRightCenter = 0; //Проверяемые данные световой бампер правый центральный
+int checkLightBumperRight = 0;       //Проверяемые данные световой бампер правый
+byte streamArray[] =
     {
         Sensor_BumpsAndWheelDrops,
         //Sensor_CliffSignal_Left,
         //Sensor_Cliff_FrontLeft,
         Sensor_Buttons,
-        //Sensor_EncoderCounts_Left,
-        //Sensor_EncoderCounts_Right,
-        Sensor_LightBumper_Left,
-        Sensor_LightBumper_LeftCenter,
-        Sensor_LightBumper_RightCenter,
-        Sensor_LightBumper_Right};
-byte WaitCounter = 0;     //вводим переменную, которая будет хранить количество датчиков
-byte CounterSensors = 0;  //вводим переменную, которая будет использоваться в цикле и записывать в себе результаты счетчика
-byte QuantitySensors = 6; //количество датчиков
+        //Sensor_Distance,
+        Sensor_EncoderCounts_Left,
+        Sensor_EncoderCounts_Right,
+        Sensor_LightBumper,
+        //Sensor_LightBumper_Left,
+        //Sensor_LightBumper_LeftCenter,
+        //Sensor_LightBumper_RightCenter,
+        //Sensor_LightBumper_Right
+};
+byte waitCounter = 0;     //вводим переменную, которая будет хранить количество датчиков
+byte counterSensors = 0;  //вводим переменную, которая будет использоваться в цикле и записывать в себе результаты счетчика
+byte quantitySensors = 5; //количество датчиков
 uint64_t timing = 0;      //используется для задержки по внутреннему таймеру
 typedef enum
 {
-  Back,
-  Left,
-  Forward
-} StatusDrive;                     //группа для управления движения
-StatusDrive statusDrive = Forward; //переменная группы управления движения
-uint64_t timeStateBump = 0;        //переменная таймера при врезании
-sbyte2 LastRight = 0;              //последние данные правого колеса
-sbyte2 LastLeft = 0;               //последние данные левого колеса
-sbyte2 LastVelocity = 0;           //последние данные скорости
-sbyte2 LastRadius = 0;             //последние данные радиуса
-
-void Roomba_init() //инициализирует румбу
+  forwardDrive,
+  backDrive,
+  leftDrive
+} StatusDrive;                          //группа для управления движения через бамперы и сенсоры
+StatusDrive statusDrive = forwardDrive; //переменная группы управления движения через бамперы и сенсоры
+uint64_t timeStateBump = 0;             //переменная таймера при врезании бампера и сенсоры
+typedef enum
 {
-  pinMode(dd_PIN, OUTPUT);
-  Roomba.begin(broadcast);                     //инициализирует UART на частоте broadcast
-  delay(second);                               //задержка секунда
-  Roomba_Wake_Up();                            //будит румбу
-  Roomba_Start_Full();                         //инициализирует работу румбы на режиме Full
-  Roomba_Init_Song();                          //инициализация мелодий
-  Roomba_Stream(StreamArray, QuantitySensors); //говорим какие датчики трансировать
-  delay(0.5 * second);
-  Song_Start;                                  //проигрование мелодии запуска
+  forwardEncoder,
+  backEncoder,
+  leftEncoder,
+} StatusEncoder;                           //группа для управления движения с помощью энкодеров
+StatusEncoder statusEncoder = backEncoder; //переменная группа для управления движения с помощью энкодеров
+uint64_t timeStateEncoder = 0;             //переменная таймера энкодеров
+int counterEncoderLeft = 0;                //переменная подсчета данных с энкодеров левый
+int counterEncoderRight = 0;               //переменная подсчета данных с энкодеров правый
+int16_t lastRight = 0;                     //последние данные правого колеса
+int16_t lastLeft = 0;                      //последние данные левого колеса
+int16_t lastVelocity = 0;                  //последние данные скорости
+int16_t lastRadius = 0;                    //последние данные радиуса
 
-  delay(0.5 * second);
-  Roomba_Set_LED(true, true, true, false, 0, 255); //устанавливает и запускает светодиоды на румбе
-  delay(0.5 * second);
-  Roomba_Set_LED(false, false, false, false, 0, 255);
-  delay(0.5 * second);
-  Roomba_Set_LED(true, true, true, false, 0, 255);
-  delay(0.5 * second);
-  Roomba_Set_LED(false, false, false, false, 0, 255);
-  delay(0.5 * second);
-  Roomba_Set_LED(false, true, true, false, 0, 255);
-  delay(0.5 * second);
+void roomba_Init() //инициализирует румбу
+{
+  pinMode(DD_PIN, OUTPUT);
+  Roomba.begin(BROADCAST); //инициализирует UART на частоте BROADCAST
+  delay(0.5 * SECOND);     //задержка секунда
+  roomba_WakeUp();         //будит румбу
+  delay(0.5 * SECOND);     //задержка секунда
+  roomba_StartFull();      //инициализирует работу румбы на режиме Full
+  delay(0.5 * SECOND);     //задержка секунда
+  //roomba_InitSong();                          //инициализация мелодий
+  roomba_Stream(streamArray, quantitySensors); //говорим какие датчики трансировать
+  //songStart; //проигрывание мелодии запуска
+
+  delay(0.5 * SECOND);
+  roomba_SetLED(true, true, true, false, 0, 255); //устанавливает и запускает светодиоды на румбе
+  delay(0.5 * SECOND);
+  roomba_SetLED(false, false, false, false, 0, 255);
+  delay(0.5 * SECOND);
+  roomba_SetLED(false, true, true, false, 0, 255);
+  delay(0.5 * SECOND);
 }
-bool Povtorenya;
-void Roomba_Loop() //сама программа румбы
+
+void roomba_Loop() //сама программа румбы
 {
   ///*
-  if (statusDrive == Forward)
+  if (statusDrive == forwardDrive)
   {
-    Povtorenya = false;
-    Roomba_GoDirect(150, 150);
+    roomba_GoDirect(150, 150);
   }
-  else if (statusDrive == Back)
+  else if (statusDrive == backDrive)
   {
-    Roomba_GoDirect(-200, -200);
-    if (millis() - timeStateBump > 400)
+    roomba_GoDirect(-150, -150);
+    if (millis() - timeStateBump > 300)
     {
       timeStateBump = millis();
-      statusDrive = Left;
+      statusDrive = leftDrive;
     }
   }
-  else if (statusDrive == Left)
+  else if (statusDrive == leftDrive)
   {
-    Roomba_GoDirect(200, -200);
-    if (millis() - timeStateBump > 400)
+    roomba_GoDirect(150, -150);
+    if (millis() - timeStateBump > 300)
     {
-      statusDrive = Forward;
+      statusDrive = forwardDrive;
     }
   }
   //*/
-  if (millis() - timing > 15)
+  if (statusEncoder == forwardEncoder)
+  {
+    roomba_GoDirect(150, 150);
+    if (encoderCountsLeft - counterEncoderLeft > 100)
+    {
+      roomba_GoDirect(0, 0);
+      statusEncoder = backEncoder;
+    }
+  }
+
+  if (millis() - timing > 5)
   {
     timing = millis();
-    if (Roomba_Sensors_Pack_Check())
+    if (roomba_SensorsPackCheck())
     {
       /*
       int PrintArray[] =
           {
-              BumpsAndWheelDrops,
-              //CliffSignal_Left,
-              //CliffSignal_FrontLeft,
-              Buttons,
-              //EncoderCounts_Left,
-              //EncoderCounts_Right,
-              LightBumper_Left,
-              LightBumper_LeftCenter,
-              LightBumper_RightCenter,
-              LightBumper_Right,
+              bumpsAndWheelDrops,
+              //cliffSignalLeft,
+              //cliffSignalFrontLeft,
+              buttons,
+              //distance,
+              encoderCountsLeft,
+              encoderCountsRight,
+              lightBumper,
+              //lightBumperLeft,
+              //lightBumperLeftCenter,
+              //lightBumperRightCenter,
+              //lightBumperRight,
           };
-      for (byte i = 0; i < QuantitySensors; i++)
+      for (byte i = 0; i < quantitySensors; i++)
       {
         Serial.print(PrintArray[i]);
         Serial.print("   ");
       }
       Serial.println("");
       */
-      if (Buttons == 1)
-        //Song_Good;
-        Roomba_Reset();
-      if (Buttons == 2)
-        Roomba_Stop();
-      if (Buttons == 6)
-        Roomba_Reset();
-
-      if (BumpsAndWheelDrops == 1 or BumpsAndWheelDrops == 2 or
-          BumpsAndWheelDrops == 3 or BumpsAndWheelDrops == 5 or
-          BumpsAndWheelDrops == 6 or BumpsAndWheelDrops == 7 or
-          BumpsAndWheelDrops == 9 or BumpsAndWheelDrops == 10 or
-          BumpsAndWheelDrops == 11 or LightBumper_Left > 40 or
-          LightBumper_LeftCenter > 40 or LightBumper_RightCenter > 40 or
-          LightBumper_Right > 40)
+      if (buttons == 1)
+        //songGood;
+        roomba_Reset();
+      if (buttons == 2)
       {
-        if (statusDrive != Back)
+        if (statusEncoder != forwardEncoder)
+        {
+          counterEncoderLeft = encoderCountsLeft;
+        }
+        statusEncoder = forwardEncoder;
+      }
+      if (buttons == 6)
+        roomba_Reset();
+      ///*
+      if (bumpsAndWheelDrops > 0 or lightBumper > 0)
+      {
+        if (statusDrive != backDrive)
         {
           timeStateBump = millis();
         }
-        statusDrive = Back;
+        statusDrive = backDrive;
       }
+      //*/
     }
   }
 }
 
-void Roomba_Stream(const byte *StreamArrayCount, byte StreamLength) //транслирует данные с датчиков (задаем датчики)
+void roomba_Stream(const byte *StreamArrayCount, byte StreamLength) //транслирует данные с датчиков (задаем датчики)
 {
   Roomba.write(148);                     //команда трансляции
   Roomba.write(StreamLength);            //хаписываем кол-во датчиков на трансляцию
@@ -162,43 +188,47 @@ void Roomba_Stream(const byte *StreamArrayCount, byte StreamLength) //транс
   }
 }
 
-void Roomba_Wake_Up() //будит румбу
+void roomba_WakeUp() //будит румбу
 {
-  digitalWrite(dd_PIN, HIGH);
-  digitalWrite(dd_PIN, LOW);
-  digitalWrite(dd_PIN, HIGH);
+  digitalWrite(DD_PIN, HIGH);
+  delay(100);
+  digitalWrite(DD_PIN, LOW);
+  delay(100);
+  digitalWrite(DD_PIN, HIGH);
+  delay(100);
 }
 
-void Roomba_Start_Full() //запускает режим FULL
+void roomba_StartFull() //запускает режим FULL
 {
   Roomba.write(128); //запускает румбу
   Roomba.write(132); //полный контроль FULL
 }
 
-void Roomba_Reset() //перезагружает румбу
+void roomba_Reset() //перезагружает румбу
 {
-  Roomba_GoDirect(0, 0); //стопает движение румбы
-  Song_Sleep;            //музыка сна
-  Roomba.write(7);       //команда перезагрузки
+  roomba_GoDirect(0, 0); //стопает движение румбы
+  //songSleep;            //музыка сна
+  Roomba.write(7); //команда перезагрузки
 }
 
-void Roomba_Stop() //выключает румбу
+void roomba_Stop() //выключает румбу
 {
-  Roomba_GoDirect(0, 0); //стопает движение румбы
-  Song_Sleep;            //музыка сна
-  Roomba.write(173);     //команда выключения
+  roomba_GoDirect(0, 0); //стопает движение румбы
+  //songSleep;            //музыка сна
+  Roomba.write(173); //команда выключения
 }
 
-void Roomba_Set_LED(bool debrisLED, bool spotLED, bool dockLED, bool checkLED, byte color, byte intensity) //устанавливает и запускает светодиоды на румбе
+void roomba_SetLED(bool debrisLED, bool spotLED, bool dockLED, bool checkLED, byte color, byte intensity) //устанавливает и запускает светодиоды на румбе
 {
-  Roomba.write(139);                                                                    //инициализация LEDs
-  byte LED_Bits = (debrisLED << 0) | (spotLED << 1) | (dockLED << 2) | (checkLED << 3); //биты (синий, зеленый, док, оранжевый)
-  Roomba.write(LED_Bits);                                                               //посылаем биты
-  Roomba.write(color);                                                                  //посылаем цвет (0 - зеленый, 255 - красный)
-  Roomba.write(intensity);                                                              //интенсивность
+  Roomba.write(139);                                                                   //инициализация LEDs
+  byte LEDBits = (debrisLED << 0) | (spotLED << 1) | (dockLED << 2) | (checkLED << 3); //биты (синий, зеленый, док, оранжевый)
+  Roomba.write(LEDBits);                                                               //посылаем биты
+  Roomba.write(color);                                                                 //посылаем цвет (0 - зеленый, 255 - красный)
+  Roomba.write(intensity);                                                             //интенсивность
 }
 
-sbyte2 Roomba_Compare(sbyte2 compare, sbyte2 min, sbyte2 max) //команда ограничения между max и min
+/*
+int16_t Roomba_Compare(int16_t compare, int16_t min, int16_t max) //команда ограничения между max и min
 {
   if (compare < min)      //сравнение с min
     compare = min;        //если меньше, чем должно быть, то записываем
@@ -206,13 +236,14 @@ sbyte2 Roomba_Compare(sbyte2 compare, sbyte2 min, sbyte2 max) //команда �
     compare = max;        //если больше, чем должно быть, то записываем
   return (compare);       //возврат значения
 }
+*/
 
-void Roomba_Go(sbyte2 velocity, sbyte2 radius) //Команда езды румбы со скоростью и радиусом
+void roomba_Go(int16_t velocity, int16_t radius) //Команда езды румбы со скоростью и радиусом
 {
-  velocity = Roomba_Compare(velocity, -500, 500); //ограничение скорость 500 мм/с
-  radius = Roomba_Compare(radius, -2000, 2000);   //ограничение радиуса 2000 мм
+  velocity = _CLAMP(velocity, -500, 500); //ограничение скорость 500 мм/с
+  radius = _CLAMP(radius, -2000, 2000);   //ограничение радиуса 2000 мм
 
-  if (LastVelocity != velocity or LastRadius != radius) //если не равно, то отправляем данные (для оптимизации кода, чтобы не отправлял каждый раз)
+  if (lastVelocity != velocity or lastRadius != radius) //если не равно, то отправляем данные (для оптимизации кода, чтобы не отправлял каждый раз)
   {
     Roomba.write(137);           //Команда езды
     Roomba.write(velocity >> 8); //устанавливаем скорость в high byte (мм/с)
@@ -221,16 +252,16 @@ void Roomba_Go(sbyte2 velocity, sbyte2 radius) //Команда езды рум�
     Roomba.write(radius);        //устанавливаем радиус в low byte
   }
 
-  LastVelocity = velocity; //последние данные скорости
-  LastRadius = radius;     //последние данные радиуса
+  lastVelocity = velocity; //последние данные скорости
+  lastRadius = radius;     //последние данные радиуса
 }
 
-void Roomba_GoDirect(sbyte2 right, sbyte2 left) //управление движением колес вперед и назад
+void roomba_GoDirect(int16_t right, int16_t left) //управление движением колес вперед и назад
 {
-  right = Roomba_Compare(right, -500, 500); //ограничение скорость 500 мм/с
-  left = Roomba_Compare(left, -500, 500);   //ограничение скорость 500 мм/с
+  right = _CLAMP(right, -500, 500); //ограничение скорость 500 мм/с
+  left = _CLAMP(left, -500, 500);   //ограничение скорость 500 мм/с
 
-  if (LastRight != right or LastLeft != left) //если не равно, то отправляем данные (для оптимизации кода, чтобы не отправлял каждый раз)
+  if (lastRight != right or lastLeft != left) //если не равно, то отправляем данные (для оптимизации кода, чтобы не отправлял каждый раз)
   {
     Roomba.write(145);        //Команда езды
     Roomba.write(right >> 8); //устанавливаем скорость правого колеса в high byte (мм/с)
@@ -239,140 +270,159 @@ void Roomba_GoDirect(sbyte2 right, sbyte2 left) //управление движ�
     Roomba.write(left);       //устанавливаем скорость левого колеса в low byte
   }
 
-  LastRight = right; //последние данные правого колеса
-  LastLeft = left;   //последние данные левого колеса
+  lastRight = right; //последние данные правого колеса
+  lastLeft = left;   //последние данные левого колеса
 }
 
-byte Roomba_ReadByte() //команда считывает данные с румбы
+byte roomba_ReadByte() //команда считывает данные с румбы
 {
-  byte RoombaRead = Roomba.read(); //читает данные с румбы
-  return RoombaRead;               //возвращает значение
+  byte read = Roomba.read(); //читает данные с румбы
+  return read;               //возвращает значение
 }
 
-byte Roomba_Sensors_Pack(byte pack) //то, что возвращают сенсоры
+byte roomba_SensorsPack(byte pack) //то, что возвращают сенсоры
 {
   if (pack == Sensor_BumpsAndWheelDrops) //если бампер и колеса (простое)
   {
-    byte Read = Roomba_ReadByte();   //записываем
-    Check_BumpsAndWheelDrops = Read; //соединяем и запоминаем в один байт
-    CounterSensors++;                //записывает в переменную счетчика
-    return (Read);                   //возвращает значение
+    byte read = roomba_ReadByte();  //записываем
+    checkBumpsAndWheelDrops = read; //соединяем и запоминаем в один байт
+    counterSensors++;               //записывает в переменную счетчика
+    return (read);                  //возвращает значение
   }
 
   if (pack == Sensor_CliffSignal_Left) //если левый центральный световой
   {
-    byte ReadHigh = Roomba_ReadByte();                    //записываем high byte
-    byte ReadLow = Roomba_ReadByte();                     //записываем low byte
-    Check_CliffSignal_Left = (ReadHigh << 8) | (ReadLow); //соединяем и запоминаем в один байт
-    CounterSensors += 2;                                  //записывает в переменную счетчика
-    return (ReadHigh + ReadLow);                          //возвращает значение
+    byte readHigh = roomba_ReadByte();                  //записываем high byte
+    byte readLow = roomba_ReadByte();                   //записываем low byte
+    checkCliffSignalLeft = (readHigh << 8) | (readLow); //соединяем и запоминаем в один байт
+    counterSensors += 2;                                //записывает в переменную счетчика
+    return (readHigh + readLow);                        //возвращает значение
   }
 
   if (pack == Sensor_CliffSignal_FrontLeft) //если правый центральный световой
   {
-    byte ReadHigh = Roomba_ReadByte();                         //записываем high byte
-    byte ReadLow = Roomba_ReadByte();                          //записываем low byte
-    Check_CliffSignal_FrontLeft = (ReadHigh << 8) | (ReadLow); //соединяем и запоминаем в один байт
-    CounterSensors += 2;                                       //записывает в переменную счетчика
-    return (ReadHigh + ReadLow);                               //возвращает значение
+    byte readHigh = roomba_ReadByte();                       //записываем high byte
+    byte readLow = roomba_ReadByte();                        //записываем low byte
+    checkCliffSignalFrontLeft = (readHigh << 8) | (readLow); //соединяем и запоминаем в один байт
+    counterSensors += 2;                                     //записывает в переменную счетчика
+    return (readHigh + readLow);                             //возвращает значение
   }
 
   if (pack == Sensor_Buttons) //если нажата кнопка
   {
-    byte Read = Roomba_ReadByte(); //записываем данные
-    Check_Buttons = Read;          //записываем в проверку
-    CounterSensors++;              //записывает в переменную счетчика
-    return Read;                   //возвращает значение
+    byte read = roomba_ReadByte(); //записываем данные
+    checkButtons = read;           //записываем в проверку
+    counterSensors++;              //записывает в переменную счетчика
+    return read;                   //возвращает значение
+  }
+
+  if (pack == Sensor_Distance) //если дистанция
+  {
+    byte readHigh = roomba_ReadByte();           //записываем high byte
+    byte readLow = roomba_ReadByte();            //записываем low byte
+    checkDistance = (readHigh << 8) | (readLow); //соединяем и запоминаем в один байт
+    counterSensors += 2;                         //записывает в переменную счетчика
+    return (readHigh + readLow);                 //возвращает значение
   }
 
   if (pack == Sensor_EncoderCounts_Left) //если левый энкодер
   {
-    byte ReadHigh = Roomba_ReadByte();                      //записываем high byte
-    byte ReadLow = Roomba_ReadByte();                       //записываем low byte
-    Check_EncoderCounts_Left = (ReadHigh << 8) | (ReadLow); //соединяем и запоминаем в один байт
-    CounterSensors += 2;                                    //записывает в переменную счетчика
-    return (ReadHigh + ReadLow);                            //возвращает значение
+    byte readHigh = roomba_ReadByte();                    //записываем high byte
+    byte readLow = roomba_ReadByte();                     //записываем low byte
+    checkEncoderCountsLeft = (readHigh << 8) | (readLow); //соединяем и запоминаем в один байт
+    counterSensors += 2;                                  //записывает в переменную счетчика
+    return (readHigh + readLow);                          //возвращает значение
   }
 
   if (pack == Sensor_EncoderCounts_Right) //если правый энкодер
   {
-    byte ReadHigh = Roomba_ReadByte();                       //записываем high byte
-    byte ReadLow = Roomba_ReadByte();                        //записываем low byte
-    Check_EncoderCounts_Right = (ReadHigh << 8) | (ReadLow); //соединяем и запоминаем в один байт
-    CounterSensors += 2;                                     //записывает в переменную счетчика
-    return (ReadHigh + ReadLow);                             //возвращает значение
+    byte readHigh = roomba_ReadByte();                     //записываем high byte
+    byte readLow = roomba_ReadByte();                      //записываем low byte
+    checkEncoderCountsRight = (readHigh << 8) | (readLow); //соединяем и запоминаем в один байт
+    counterSensors += 2;                                   //записывает в переменную счетчика
+    return (readHigh + readLow);                           //возвращает значение
+  }
+
+  if (pack == Sensor_LightBumper) //если световые бампера (простое)
+  {
+    byte read = roomba_ReadByte(); //записываем
+    checkLightBumper = read;       //соединяем и запоминаем в один байт
+    counterSensors++;              //записывает в переменную счетчика
+    return (read);                 //возвращает значение
   }
 
   if (pack == Sensor_LightBumper_Left) //если левый световой
   {
-    byte ReadHigh = Roomba_ReadByte();                    //записываем high byte
-    byte ReadLow = Roomba_ReadByte();                     //записываем low byte
-    Check_LightBumper_Left = (ReadHigh << 8) | (ReadLow); //соединяем и запоминаем в один байт
-    CounterSensors += 2;                                  //записывает в переменную счетчика
-    return (ReadHigh + ReadLow);                          //возвращает значение
+    byte readHigh = roomba_ReadByte();                  //записываем high byte
+    byte readLow = roomba_ReadByte();                   //записываем low byte
+    checkLightBumperLeft = (readHigh << 8) | (readLow); //соединяем и запоминаем в один байт
+    counterSensors += 2;                                //записывает в переменную счетчика
+    return (readHigh + readLow);                        //возвращает значение
   }
 
   if (pack == Sensor_LightBumper_LeftCenter) //если левый центральный световой
   {
-    byte ReadHigh = Roomba_ReadByte();                          //записываем high byte
-    byte ReadLow = Roomba_ReadByte();                           //записываем low byte
-    Check_LightBumper_LeftCenter = (ReadHigh << 8) | (ReadLow); //соединяем и запоминаем в один байт
-    CounterSensors += 2;                                        //записывает в переменную счетчика
-    return (ReadHigh + ReadLow);                                //возвращает значение
+    byte readHigh = roomba_ReadByte();                        //записываем high byte
+    byte readLow = roomba_ReadByte();                         //записываем low byte
+    checkLightBumperLeftCenter = (readHigh << 8) | (readLow); //соединяем и запоминаем в один байт
+    counterSensors += 2;                                      //записывает в переменную счетчика
+    return (readHigh + readLow);                              //возвращает значение
   }
 
   if (pack == Sensor_LightBumper_RightCenter) //если правый центральный световой
   {
-    byte ReadHigh = Roomba_ReadByte();                           //записываем high byte
-    byte ReadLow = Roomba_ReadByte();                            //записываем low byte
-    Check_LightBumper_RightCenter = (ReadHigh << 8) | (ReadLow); //соединяем и запоминаем в один байт
-    CounterSensors += 2;                                         //записывает в переменную счетчика
-    return (ReadHigh + ReadLow);                                 //возвращает значение
+    byte readHigh = roomba_ReadByte();                         //записываем high byte
+    byte readLow = roomba_ReadByte();                          //записываем low byte
+    checkLightBumperRightCenter = (readHigh << 8) | (readLow); //соединяем и запоминаем в один байт
+    counterSensors += 2;                                       //записывает в переменную счетчика
+    return (readHigh + readLow);                               //возвращает значение
   }
 
   if (pack == Sensor_LightBumper_Right) //если правый световой
   {
-    byte ReadHigh = Roomba_ReadByte();                     //записываем high byte
-    byte ReadLow = Roomba_ReadByte();                      //записываем low byte
-    Check_LightBumper_Right = (ReadHigh << 8) | (ReadLow); //соединяем и запоминаем в один байт
-    CounterSensors += 2;                                   //записывает в переменную счетчика
-    return (ReadHigh + ReadLow);                           //возвращает значение
+    byte readHigh = roomba_ReadByte();                   //записываем high byte
+    byte readLow = roomba_ReadByte();                    //записываем low byte
+    checkLightBumperRight = (readHigh << 8) | (readLow); //соединяем и запоминаем в один байт
+    counterSensors += 2;                                 //записывает в переменную счетчика
+    return (readHigh + readLow);                         //возвращает значение
   }
 
   return 0; //возвращает 0, если ничего из верхнего
 }
 
-bool Roomba_Sensors_Pack_Check() //принимаем данные с датчиков и проверяем
+bool roomba_SensorsPackCheck() //принимаем данные с датчиков и проверяем
 {
-  byte SensorID = 0;      //вводим переменную, которая будет хранить id датчика
-  byte Total = 0;         //вводим переменную, которая будет хранить общую сумму (должна равна быть 256)
+  byte sensorID = 0;      //вводим переменную, которая будет хранить id датчика
+  byte total = 0;         //вводим переменную, которая будет хранить общую сумму (должна равна быть 256)
   if (Roomba.available()) //если есть доступные данные
   {
-    if (Roomba_ReadByte() == 19) //если прислал 19, то это данные с датчиков
+    if (roomba_ReadByte() == 19) //если прислал 19, то это данные с датчиков
     {
-      WaitCounter = Roomba_ReadByte(); //прочитали n-bytes
-      Total = 19 + WaitCounter;        //суммируем данные
+      waitCounter = roomba_ReadByte(); //прочитали n-bytes
+      total = 19 + waitCounter;        //суммируем данные
 
-      for (CounterSensors = 0; CounterSensors < WaitCounter; CounterSensors++) //цикл считывания и суммирования
+      for (counterSensors = 0; counterSensors < waitCounter; counterSensors++) //цикл считывания и суммирования
       {
-        SensorID = Roomba_ReadByte();                      //записываем ID датчика
-        Total += SensorID + Roomba_Sensors_Pack(SensorID); //суммируем ID и информацию с него
+        sensorID = roomba_ReadByte();                     //записываем ID датчика
+        total += sensorID + roomba_SensorsPack(sensorID); //суммируем ID и информацию с него
       }
 
-      byte LastInfo = Roomba_ReadByte(); //читаем последний байт (check)
+      byte lastInfo = roomba_ReadByte(); //читаем последний байт (check)
 
-      if ((Total + LastInfo) % 256 == 0) //если сумма равна 256, то записываем в истинные значения
+      if ((total + lastInfo) % 256 == 0) //если сумма равна 256, то записываем в истинные значения
       {
-        BumpsAndWheelDrops = Check_BumpsAndWheelDrops;           //из проверки в истину
-        CliffSignal_Left = Check_CliffSignal_Left;               //из проверки в истину
-        CliffSignal_FrontLeft = Check_CliffSignal_FrontLeft;     //из проверки в истину
-        Buttons = Check_Buttons;                                 //из проверки в истину
-        EncoderCounts_Left = Check_EncoderCounts_Left;           //из проверки в истину
-        EncoderCounts_Right = Check_EncoderCounts_Right;         //из проверки в истину
-        LightBumper_Left = Check_LightBumper_Left;               //из проверки в истину
-        LightBumper_LeftCenter = Check_LightBumper_LeftCenter;   //из проверки в истину
-        LightBumper_RightCenter = Check_LightBumper_RightCenter; //из проверки в истину
-        LightBumper_Right = Check_LightBumper_Right;             //из проверки в истину
+        bumpsAndWheelDrops = checkBumpsAndWheelDrops;         //из проверки в истину
+        cliffSignalLeft = checkCliffSignalLeft;               //из проверки в истину
+        cliffSignalFrontLeft = checkCliffSignalFrontLeft;     //из проверки в истину
+        buttons = checkButtons;                               //из проверки в истину
+        distance = checkDistance;                             //из проверки в истину
+        encoderCountsLeft = checkEncoderCountsLeft;           //из проверки в истину
+        encoderCountsRight = checkEncoderCountsRight;         //из проверки в истину
+        lightBumper = checkLightBumper;                       //из проверки в истину
+        lightBumperLeft = checkLightBumperLeft;               //из проверки в истину
+        lightBumperLeftCenter = checkLightBumperLeftCenter;   //из проверки в истину
+        lightBumperRightCenter = checkLightBumperRightCenter; //из проверки в истину
+        lightBumperRight = checkLightBumperRight;             //из проверки в истину
 
         return true; //возвращаем 1
       }
@@ -385,14 +435,14 @@ bool Roomba_Sensors_Pack_Check() //принимаем данные с датчи
   return false; //возвращаем 0 если у румбы нет данных
 }
 
-void Roomba_Play_Song(byte song) //команда запуска музыки от 0 до 4
+void roomba_PlaySong(byte song) //команда запуска музыки от 0 до 4
 {
-  Roomba.write(141);          //команда запуски музыки
-  Roomba_Compare(song, 0, 4); //ограничение от 0 до 4
-  Roomba.write(song);         //устанавливаем музыку
+  Roomba.write(141);         //команда запуски музыки
+  song = _CLAMP(song, 0, 4); //ограничение от 0 до 4
+  Roomba.write(song);        //устанавливаем музыку
 }
 
-void Roomba_Init_Song() //команда сохраняющая в памяти музыку (инициализация)
+void roomba_InitSong() //команда сохраняющая в памяти музыку (инициализация)
 {
   Roomba.write(140); //команда создающая в памяти звук (all star)
   Roomba.write(0);   //команда номера мелодии (0)
