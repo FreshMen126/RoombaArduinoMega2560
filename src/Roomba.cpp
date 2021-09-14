@@ -4,27 +4,21 @@ byte bumpsAndWheelDrops = 0;              //Истинные данные бам
 byte buttons = 0;                         //Истинные данные кнопок
 uint16_t distance = 0;                    //Истинные данные дистанции
 int angle = 0;                            //Истинные данные радиуса
-uint16_t wallSignal = 0;                  //Истинные данные со стены
 uint16_t cliffSignalLeft = 0;             //Истинные данные обрыва слева
 uint16_t cliffSignalFrontLeft = 0;        //Истинные данные обрыва слева спереди
-uint16_t cliffSignalFrontRight = 0;       //Истинные данные обрыва справа спереди
-uint16_t cliffSignalRight = 0;            //Истинные данные обрыва справа
 int16_t encoderCountsLeft = 0;            //Истинные данные энкодер левый
 int16_t encoderCountsRight = 0;           //Истинные данные энкодер правый
 byte lightBumper = 0;                     //Истинные данные со световых бамперов
-int16_t lightBumperLeft = 0;              //Истинные данные световой бампер левый
-int16_t lightBumperLeftCenter = 0;        //Истинные данные световой бампер левый центральный
-int16_t lightBumperRightCenter = 0;       //Истинные данные световой бампер правый центральный
-int16_t lightBumperRight = 0;             //Истинные данные световой бампер правый
+uint16_t lightBumperLeft = 0;             //Истинные данные световой бампер левый
+uint16_t lightBumperLeftCenter = 0;       //Истинные данные световой бампер левый центральный
+uint16_t lightBumperRightCenter = 0;      //Истинные данные световой бампер правый центральный
+uint16_t lightBumperRight = 0;            //Истинные данные световой бампер правый
 byte checkBumpsAndWheelDrops = 0;         //Проверяемые данные бампера и колес (простой вариант)
 byte checkButtons = 0;                    //Проверяемые данные кнопок
 uint16_t checkDistance = 0;               //Проверяемые данные дистанции
 int checkAngle = 0;                       //Проверяемые данные радиуса
-uint16_t checkWallSignal = 0;             //Проверяемые данные со стены
 uint16_t checkCliffSignalLeft = 0;        //Проверяемые данные обрыва слева
 uint16_t checkCliffSignalFrontLeft = 0;   //Проверяемые данные обрыва слева спереди
-uint16_t checkCliffSignalFrontRight = 0;  //Проверяемые данные обрыва справа спереди
-uint16_t checkCliffSignalRight = 0;       //Проверяемые данные обрыва справа
 int16_t checkEncoderCountsLeft = 0;       //Проверяемые данные энкодер левый
 int16_t checkEncoderCountsRight = 0;      //Проверяемые данные энкодер правый
 byte checkLightBumper = 0;                //Проверяемые данные со световых бамперов
@@ -35,48 +29,37 @@ uint16_t checkLightBumperRight = 0;       //Проверяемые данные 
 byte streamArray[] =
     {
         Sensor_BumpsAndWheelDrops,
+        //Sensor_CliffSignal_Left,
+        //Sensor_Cliff_FrontLeft,
         Sensor_Buttons,
         //Sensor_Distance,
-        //Sensor_Angle,
-        //Sensor_WallSignal,
-        //Sensor_CliffSignal_Left,
-        //Sensor_CliffSignal_FrontLeft,
-        //Sensor_CliffSignal_FrontRight,
-        //Sensor_CliffSignal_Right,
+        Sensor_Angle,
         Sensor_EncoderCounts_Left,
         Sensor_EncoderCounts_Right,
         Sensor_LightBumper,
-        Sensor_LightBumper_Left,
-        Sensor_LightBumper_LeftCenter,
-        Sensor_LightBumper_RightCenter,
-        Sensor_LightBumper_Right};
+        //Sensor_LightBumper_Left,
+        //Sensor_LightBumper_LeftCenter,
+        //Sensor_LightBumper_RightCenter,
+        //Sensor_LightBumper_Right
+};
 byte waitCounter = 0;    //вводим переменную, которая будет хранить количество датчиков
 byte counterSensors = 0; //вводим переменную, которая будет использоваться в цикле и записывать в себе результаты счетчика
 uint64_t timing = 0;     //используется для задержки по внутреннему таймеру
 typedef enum
 {
-  stopDrive,
-  startDrive
-} StatusDrive; //группа для управления движения через бамперы и сенсоры
+  forwardDrive,
+  backDrive,
+  leftDrive
+} StatusDrive;                          //группа для управления движения через бамперы и сенсоры
+StatusDrive statusDrive = forwardDrive; //переменная группы управления движения через бамперы и сенсоры
+uint64_t timeStateBump = 0;             //переменная таймера при врезании бампера и сенсоры
 typedef enum
 {
-  stopNewDrive,
-  forwardNewDrive,
-  backNewDrive,
-  leftNewDrive,
-  rightNewDrive
-} StatusNewDrive;
-StatusNewDrive statusNewDrive = stopNewDrive;
-StatusDrive statusDrive = startDrive; //переменная группы управления движения через бамперы и сенсоры
-uint64_t timeStateBump = 0;           //переменная таймера при врезании бампера и сенсоры
-typedef enum
-{
-  stopEncoder,
   forwardEncoder,
   backEncoder,
   leftEncoder,
 } StatusEncoder;                           //группа для управления движения с помощью энкодеров
-StatusEncoder statusEncoder = stopEncoder; //переменная группа для управления движения с помощью энкодеров
+StatusEncoder statusEncoder = backEncoder; //переменная группа для управления движения с помощью энкодеров
 uint64_t timeStateEncoder = 0;             //переменная таймера энкодеров
 int32_t counterDifferenceEncoderLeft = 0;  //переменная разницы показателей левого энкодера
 int32_t counterDifferenceEncoderRight = 0; //переменная разницы показателей правого энкодера
@@ -94,16 +77,15 @@ int16_t lastRadius = 0;   //последние данные радиуса
 void roomba_Init() //инициализирует румбу
 {
   pinMode(DD_PIN, OUTPUT);
-  Roomba.begin(BROADCAST);                         //инициализирует UART на частоте BROADCAST
-  delay(1.5 * SECOND);                             //задержка секунда
-  roomba_WakeUp();                                 //будит румбу
-  delay(0.5 * SECOND);                             //задержка секунда
-  roomba_StartFull();                              //инициализирует работу румбы на режиме Full
-  delay(0.5 * SECOND);                             //задержка секунда
-  roomba_InitSong();                               //инициализация мелодий
+  Roomba.begin(BROADCAST); //инициализирует UART на частоте BROADCAST
+  delay(1.5 * SECOND);     //задержка секунда
+  roomba_WakeUp();         //будит румбу
+  delay(0.5 * SECOND);     //задержка секунда
+  roomba_StartFull();      //инициализирует работу румбы на режиме Full
+  delay(0.5 * SECOND);     //задержка секунда
+  //roomba_InitSong();                          //инициализация мелодий
   roomba_Stream(streamArray, sizeof(streamArray)); //говорим какие датчики трансировать
   //songStart; //проигрывание мелодии запуска
-  songGood; //проигрывание мелодии "хороший" (она короче)
 
   delay(0.5 * SECOND);
   roomba_SetLED(true, true, true, false, 0, 255); //устанавливает и запускает светодиоды на румбе
@@ -114,53 +96,33 @@ void roomba_Init() //инициализирует румбу
   delay(0.5 * SECOND);
 }
 
+uint64_t nextTimeSend = 0;
+
 void roomba_Loop() //сама программа румбы
 {
-  //plate_LEDAlert();
-
-  if (statusNewDrive == forwardNewDrive)
+  /*
+  if (statusDrive == forwardDrive)
   {
-    roomba_GoDirect(125, 125);
+    roomba_GoDirect(150, 150);
   }
-  else if (statusNewDrive == backNewDrive)
+  else if (statusDrive == backDrive)
   {
-    roomba_GoDirect(-125, -125);
-    statusDrive = stopDrive;
-
-    if (millis() - timeStateBump > 500)
-    {
-      timeStateBump = millis();
-      if (lightBumperLeft > lightBumperRight)
-      {
-        statusNewDrive = rightNewDrive;
-      }
-      else
-        statusNewDrive = leftNewDrive;
-    }
-  }
-  else if (statusNewDrive == leftNewDrive)
-  {
-    roomba_GoDirect(125, -125);
-    statusDrive = stopDrive;
-
-    if (millis() - timeStateBump > 250)
-    {
-      statusNewDrive = forwardNewDrive;
-      statusDrive = startDrive;
-    }
-  }
-  else if (statusNewDrive == rightNewDrive)
-  {
-    roomba_GoDirect(-125, 125);
-    statusDrive = stopDrive;
-
+    roomba_GoDirect(-150, -150);
     if (millis() - timeStateBump > 300)
     {
-      statusNewDrive = forwardNewDrive;
-      statusDrive = startDrive;
+      timeStateBump = millis();
+      statusDrive = leftDrive;
     }
   }
-
+  else if (statusDrive == leftDrive)
+  {
+    roomba_GoDirect(150, -150);
+    if (millis() - timeStateBump > 300)
+    {
+      statusDrive = forwardDrive;
+    }
+  }
+  */
   if (statusEncoder == forwardEncoder)
   {
     roomba_GoDirectEncoders(90, 90);
@@ -169,7 +131,7 @@ void roomba_Loop() //сама программа румбы
 
     // Serial.println("Moving, mm:");
     // Serial.println(distanceEncoders);
-
+    
     if (distanceEncoders >= 300)
     {
       counterEncoderLeft = encoderCountsLeft;
@@ -190,7 +152,7 @@ void roomba_Loop() //сама программа румбы
       counterEncoderLeft = encoderCountsLeft;
       counterEncoderRight = encoderCountsRight;
       statusEncoder = forwardEncoder;
-
+      
       //roomba_GoDirect(0, 0);
     }
   }
@@ -202,125 +164,60 @@ void roomba_Loop() //сама программа румбы
 
 void roomba_SensorsLoop() //loop проверки сенсоров и взаимодействия с датчиками
 {
-
+  ///*
   if (roomba_SensorsPackCheck())
   {
-    //roomba_PrintSensors();
-
-    if (buttons == 1)
+    /*
+    int PrintArray[] =
+        {
+            bumpsAndWheelDrops,
+            //cliffSignalLeft,
+            //cliffSignalFrontLeft,
+            buttons,
+            angle,
+            encoderCountsLeft,
+            encoderCountsRight,
+            lightBumper,
+            //lightBumperLeft,
+            //lightBumperLeftCenter,
+            //lightBumperRightCenter,
+            //lightBumperRight,
+        };
+    for (byte i = 0; i < sizeof(streamArray); i++)
     {
-      //songGood;
-      roomba_GoDirect(0, 0);
-      statusDrive = stopDrive;
-      statusEncoder = stopEncoder;
-      statusNewDrive = stopNewDrive;
+      Serial.print(PrintArray[i]);
+      Serial.print("   ");
     }
-
+    Serial.println("");
+    */
+    if (buttons == 1)
+      //songGood;
+      roomba_Reset();
     if (buttons == 2)
     {
       counterEncoderLeft = encoderCountsLeft;
       counterEncoderRight = encoderCountsRight;
-      //statusEncoder = forwardEncoder;
-      statusNewDrive = forwardNewDrive;
+      statusEncoder = forwardEncoder;
     }
-
-    if (buttons == 4)
-    {
-      songBad;
-    }
-
     if (buttons == 6)
-    {
       roomba_Reset();
-    }
-
     ///*
-    if (bumpsAndWheelDrops > 0)
+    if (bumpsAndWheelDrops > 0 or lightBumper > 0)
     {
-      if (statusNewDrive != stopNewDrive or statusNewDrive != backNewDrive)
+      if (statusDrive != backDrive)
       {
         timeStateBump = millis();
       }
-
-      if (bumpsAndWheelDrops == 1)
-      {
-        statusNewDrive = leftNewDrive;
-      }
-      else if (bumpsAndWheelDrops == 2)
-      {
-        statusNewDrive = rightNewDrive;
-      }
-      else
-      {
-        statusNewDrive = backNewDrive;
-      }
+      statusDrive = backDrive;
     }
-
-    if (statusDrive == startDrive)
-    {
-      if (lightBumperLeft > 50 or lightBumperRight > 50)
-      {
-        if (lightBumperLeft > 50 and lightBumperLeftCenter > 30)
-        {
-          statusNewDrive = rightNewDrive;
-        }
-        else
-        {
-          statusNewDrive = leftNewDrive;
-        }
-        if (lightBumperRight > 50 and lightBumperRightCenter > 30)
-        {
-          statusNewDrive = leftNewDrive;
-        }
-        else
-        {
-          statusNewDrive = rightNewDrive;
-        }
-      }
-      if (lightBumperLeftCenter > 30 or lightBumperRightCenter > 30)
-      {
-        if (statusNewDrive != stopNewDrive or statusNewDrive != backNewDrive)
-        {
-          timeStateBump = millis();
-        }
-
-        if (lightBumperRight > 30 and lightBumperLeft > 30)
-        {
-          if (lightBumperRight > 50 and lightBumperLeft > 50)
-          {
-            statusNewDrive = backNewDrive;
-          }
-          if (lightBumperRight > 30)
-          {
-            statusNewDrive = leftNewDrive;
-          }
-          else
-          {
-            statusNewDrive = rightNewDrive;
-          }
-        }
-        else
-        {
-          if (lightBumperLeft > lightBumperRight)
-          {
-            statusNewDrive = rightNewDrive;
-          }
-          else
-          {
-            statusNewDrive = leftNewDrive;
-          }
-        }
-      }
-    }
-    //*/
   }
+  //*/
 }
 
 void roomba_Stream(const byte *StreamArrayCount, byte StreamLength) //транслирует данные с датчиков (задаем датчики)
 {
-  Roomba.write(148);          //команда трансляции
-  Roomba.write(StreamLength); //хаписываем кол-во датчиков на трансляцию
-
+  Roomba.write(148);                     //команда трансляции
+  Roomba.write(StreamLength);            //хаписываем кол-во датчиков на трансляцию
   for (int i = 0; i < StreamLength; i++) //цикл, записывающий номера датчиков
   {
     Roomba.write(StreamArrayCount[i]); //записывает номер датчика
@@ -415,15 +312,15 @@ void roomba_GoDirect(int16_t right, int16_t left) //управление дви�
 
 void roomba_GoRotateEncoders(int16_t velocity)
 {
-  velocity = _CLAMP(velocity, -500, 500); //ограничение скорость 500 мм/с
+  velocity = _CLAMP(velocity, -500, 500);         //ограничение скорость 500 мм/с
 
   if (lastVelocity != velocity) //если не равно, то отправляем данные (для оптимизации кода, чтобы не отправлял каждый раз)
   {
-    Roomba.write(145);              //Команда езды
+    Roomba.write(145);        //Команда езды
     Roomba.write((-velocity) >> 8); //устанавливаем скорость правого колеса в high byte (мм/с)
-    Roomba.write(-velocity);        //устанавливаем скорость правого колеса в low byte
-    Roomba.write(velocity >> 8);    //устанавливаем скорость левого колеса в high byte (мм)
-    Roomba.write(velocity);         //устанавливаем скорость левого колеса в low byte
+    Roomba.write(-velocity);      //устанавливаем скорость правого колеса в low byte
+    Roomba.write(velocity >> 8);  //устанавливаем скорость левого колеса в high byte (мм)
+    Roomba.write(velocity);       //устанавливаем скорость левого колеса в low byte
   }
 
   lastVelocity = velocity;
@@ -459,13 +356,30 @@ byte roomba_ReadByte() //команда считывает данные с ру�
 
 byte roomba_SensorsPack(byte pack) //то, что возвращают сенсоры
 {
-
   if (pack == Sensor_BumpsAndWheelDrops) //если бампер и колеса (простое)
   {
     byte read = roomba_ReadByte();  //записываем
     checkBumpsAndWheelDrops = read; //соединяем и запоминаем в один байт
     counterSensors++;               //записывает в переменную счетчика
     return (read);                  //возвращает значение
+  }
+
+  if (pack == Sensor_CliffSignal_Left) //если левый центральный световой
+  {
+    byte readHigh = roomba_ReadByte();                  //записываем high byte
+    byte readLow = roomba_ReadByte();                   //записываем low byte
+    checkCliffSignalLeft = (readHigh << 8) | (readLow); //соединяем и запоминаем в один байт
+    counterSensors += 2;                                //записывает в переменную счетчика
+    return (readHigh + readLow);                        //возвращает значение
+  }
+
+  if (pack == Sensor_CliffSignal_FrontLeft) //если правый центральный световой
+  {
+    byte readHigh = roomba_ReadByte();                       //записываем high byte
+    byte readLow = roomba_ReadByte();                        //записываем low byte
+    checkCliffSignalFrontLeft = (readHigh << 8) | (readLow); //соединяем и запоминаем в один байт
+    counterSensors += 2;                                     //записывает в переменную счетчика
+    return (readHigh + readLow);                             //возвращает значение
   }
 
   if (pack == Sensor_Buttons) //если нажата кнопка
@@ -492,51 +406,6 @@ byte roomba_SensorsPack(byte pack) //то, что возвращают сенс�
     checkAngle = (readHigh << 8) | (readLow); //соединяем и запоминаем в один байт
     counterSensors += 2;                      //записывает в переменную счетчика
     return (readHigh + readLow);              //возвращает значение
-  }
-
-  if (pack == Sensor_WallSignal) //если стена
-  {
-    byte readHigh = roomba_ReadByte();        //записываем high byte
-    byte readLow = roomba_ReadByte();         //записываем low byte
-    checkAngle = (readHigh << 8) | (readLow); //соединяем и запоминаем в один байт
-    counterSensors += 2;                      //записывает в переменную счетчика
-    return (readHigh + readLow);              //возвращает значение
-  }
-
-  if (pack == Sensor_CliffSignal_Left) //если левый центральный световой
-  {
-    byte readHigh = roomba_ReadByte();                  //записываем high byte
-    byte readLow = roomba_ReadByte();                   //записываем low byte
-    checkCliffSignalLeft = (readHigh << 8) | (readLow); //соединяем и запоминаем в один байт
-    counterSensors += 2;                                //записывает в переменную счетчика
-    return (readHigh + readLow);                        //возвращает значение
-  }
-
-  if (pack == Sensor_CliffSignal_FrontLeft) //если левый центральный световой
-  {
-    byte readHigh = roomba_ReadByte();                       //записываем high byte
-    byte readLow = roomba_ReadByte();                        //записываем low byte
-    checkCliffSignalFrontLeft = (readHigh << 8) | (readLow); //соединяем и запоминаем в один байт
-    counterSensors += 2;                                     //записывает в переменную счетчика
-    return (readHigh + readLow);                             //возвращает значение
-  }
-
-  if (pack == Sensor_CliffSignal_FrontRight) //если правый центральный световой
-  {
-    byte readHigh = roomba_ReadByte();                  //записываем high byte
-    byte readLow = roomba_ReadByte();                   //записываем low byte
-    checkCliffSignalLeft = (readHigh << 8) | (readLow); //соединяем и запоминаем в один байт
-    counterSensors += 2;                                //записывает в переменную счетчика
-    return (readHigh + readLow);                        //возвращает значение
-  }
-
-  if (pack == Sensor_CliffSignal_Right) //если правый световой
-  {
-    byte readHigh = roomba_ReadByte();                       //записываем high byte
-    byte readLow = roomba_ReadByte();                        //записываем low byte
-    checkCliffSignalFrontLeft = (readHigh << 8) | (readLow); //соединяем и запоминаем в один байт
-    counterSensors += 2;                                     //записывает в переменную счетчика
-    return (readHigh + readLow);                             //возвращает значение
   }
 
   if (pack == Sensor_EncoderCounts_Left) //если левый энкодер
@@ -606,12 +475,10 @@ byte roomba_SensorsPack(byte pack) //то, что возвращают сенс�
 
 bool roomba_SensorsPackCheck() //принимаем данные с датчиков и проверяем
 {
-  byte sensorID = 0; //вводим переменную, которая будет хранить id датчика
-  byte total = 0;    //вводим переменную, которая будет хранить общую сумму (должна равна быть 256)
-
+  byte sensorID = 0;      //вводим переменную, которая будет хранить id датчика
+  byte total = 0;         //вводим переменную, которая будет хранить общую сумму (должна равна быть 256)
   if (Roomba.available()) //если есть доступные данные
   {
-
     if (roomba_ReadByte() == 19) //если прислал 19, то это данные с датчиков
     {
       waitCounter = roomba_ReadByte(); //прочитали n-bytes
@@ -628,14 +495,11 @@ bool roomba_SensorsPackCheck() //принимаем данные с датчик
       if ((total + lastInfo) % 256 == 0) //если сумма равна 256, то записываем в истинные значения
       {
         bumpsAndWheelDrops = checkBumpsAndWheelDrops;         //из проверки в истину
+        cliffSignalLeft = checkCliffSignalLeft;               //из проверки в истину
+        cliffSignalFrontLeft = checkCliffSignalFrontLeft;     //из проверки в истину
         buttons = checkButtons;                               //из проверки в истину
         distance = checkDistance;                             //из проверки в истину
         angle = checkAngle;                                   //из проверки в истину
-        wallSignal = checkWallSignal;                         //из проверки в истину
-        cliffSignalLeft = checkCliffSignalLeft;               //из проверки в истину
-        cliffSignalFrontLeft = checkCliffSignalFrontLeft;     //из проверки в истину
-        cliffSignalFrontRight = checkCliffSignalFrontRight;   //из проверки в истину
-        cliffSignalRight = checkCliffSignalRight;             //из проверки в истину
         encoderCountsLeft = checkEncoderCountsLeft;           //из проверки в истину
         encoderCountsRight = checkEncoderCountsRight;         //из проверки в истину
         lightBumper = checkLightBumper;                       //из проверки в истину
@@ -871,39 +735,4 @@ void roomba_InitSong() //команда сохраняющая в памяти �
 
   Roomba.write(43); //G3
   Roomba.write(24); //задержка
-}
-
-void roomba_PrintSensors() //транслирует данные с датчиков на терминал
-{
-  int PrintArray[] =
-      {
-          bumpsAndWheelDrops,
-          buttons,
-          //angle,
-          //wallSignal,
-          //cliffSignalLeft,
-          //cliffSignalFrontLeft,
-          //cliffSignalFrontRight,
-          //cliffSignalRight,
-          encoderCountsLeft,
-          encoderCountsRight,
-          lightBumper,
-          lightBumperLeft,
-          lightBumperLeftCenter,
-          lightBumperRightCenter,
-          lightBumperRight};
-  for (byte i = 0; i < sizeof(streamArray); i++)
-  {
-    Serial.print(PrintArray[i]);
-    Serial.print("   ");
-  }
-  Serial.println("");
-}
-
-void plate_LEDAlert() //мигание светодиодом на плате
-{
-  digitalWrite(LED_PIN, HIGH);
-  delay(1000);
-  digitalWrite(LED_PIN, LOW);
-  delay(1000);
 }

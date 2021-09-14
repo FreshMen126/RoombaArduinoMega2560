@@ -60,29 +60,25 @@
 
 #define _COUNTS_TO_SM(counts) ((counts * 91) >> 11)
 
-void roomba_Init();      //инициализирует румбу
-void roomba_Loop();      //сама программа румбы
-void roomba_WakeUp();    //будим румбу
-void roomba_StartFull(); //запускает режим FULL
-void roomba_Reset();     //перезагружает румбу
-void roomba_Stop();      //выключает румбу
-
+void roomba_Init();                                                                                        //инициализирует румбу
+void roomba_Loop();                                                                                        //сама программа румбы
+void roomba_WakeUp();                                                                                      //будим румбу
+void roomba_StartFull();                                                                                   //запускает режим FULL
+void roomba_Reset();                                                                                       //перезагружает румбу
+void roomba_Stop();                                                                                        //выключает румбу
 void roomba_SetLED(bool debrisLED, bool spotLED, bool dockLED, bool checkLED, byte color, byte intensity); //устанавливает и запускает светодиоды на румбе
-
-void roomba_Stream(const byte *streamArray, byte StreamLength); //транслирует данные с датчиков (задаем датчики)
-
-void roomba_Go(int16_t velocity, int16_t radius);          //Команда езды румбы со скоростью и радиусом
-void roomba_GoDirect(int16_t right, int16_t left);         //управление движением колес вперед и назад
-void roomba_GoDirectEncoders(int16_t left, int16_t right); //управление движением колес вперед и назад для энкодеров
+void roomba_Stream(const byte *streamArray, byte StreamLength);                                            //транслирует данные с датчиков (задаем датчики)
+void roomba_Go(int16_t velocity, int16_t radius);                                                          //Команда езды румбы со скоростью и радиусом
+void roomba_GoDirect(int16_t right, int16_t left);                                                         //управление движением колес вперед и назад
+void roomba_GoDirectEncoders(int16_t left, int16_t right);                                                 //управление движением колес вперед и назад для энкодеров
 void roomba_GoRotateEncoders(int16_t velocity);
-byte roomba_ReadByte();             //команда считывает данные с румбы
-byte roomba_SensorsPack(byte pack); //то, что возвращают сенсоры
-bool roomba_SensorsPackCheck();     //принимаем данные с датчиков и проверяем
-void roomba_PlaySong(byte song);    //команда запуска музыки от 0 до 4
-void roomba_InitSong();             //команда сохраняющая в памяти музыку (инициализация)
-void roomba_SensorsLoop();          //loop проверки сенсоров и взаимодействия с датчиками
-void plate_LEDAlert();              //мигание светодиодом на плате
-void roomba_PrintSensors();         //транслирует данные с датчиков на терминал
+byte roomba_ReadByte();                                                                                    //команда считывает данные с румбы
+byte roomba_SensorsPack(byte pack);                                                                        //то, что возвращают сенсоры
+bool roomba_SensorsPackCheck();                                                                            //принимаем данные с датчиков и проверяем
+void roomba_PlaySong(byte song);                                                                           //команда запуска музыки от 0 до 4
+void roomba_InitSong();                                                                                    //команда сохраняющая в памяти музыку (инициализация)
+void roomba_SensorsLoop();                                                                                 //loop проверки сенсоров и взаимодействия с датчиками
+                                                                                                           //int16_t Roomba_Compare(int16_t compare, int16_t min, int16_t max);                                              //команда ограничения между max и min
 
 /*
 0 - all star шрек (куда его?)
