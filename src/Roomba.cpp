@@ -57,7 +57,7 @@ typedef enum
 {
   stopDrive,
   startDrive
-} StatusDrive; //группа для управления движения через бамперы и сенсоры
+} StatusDrive; //группа для управления началом движения (остановка и старт)
 typedef enum
 {
   stopNewDrive,
@@ -66,9 +66,9 @@ typedef enum
   leftNewDrive,
   rightNewDrive
 } StatusNewDrive;
-StatusNewDrive statusNewDrive = stopNewDrive;
-StatusDrive statusDrive = startDrive; //переменная группы управления движения через бамперы и сенсоры
-uint64_t timeStateBump = 0;           //переменная таймера при врезании бампера и сенсоры
+StatusNewDrive statusNewDrive = stopNewDrive; //группа для управления движения
+StatusDrive statusDrive = startDrive;         //переменная группы управления движения через бамперы и сенсоры
+uint64_t timeStateBump = 0;                   //переменная таймера при врезании бампера и сенсоры
 typedef enum
 {
   stopEncoder,
@@ -118,50 +118,50 @@ void roomba_Loop() //сама программа румбы
 {
   //plate_LEDAlert();
 
-  if (statusNewDrive == forwardNewDrive)
+  if (statusNewDrive == forwardNewDrive) //если статус вперед - едь вперед
   {
-    roomba_GoDirect(125, 125);
+    roomba_GoDirect(125, 125); //едь вперед
   }
-  else if (statusNewDrive == backNewDrive)
+  else if (statusNewDrive == backNewDrive) //если статус назад - едь назад
   {
-    roomba_GoDirect(-125, -125);
-    statusDrive = stopDrive;
+    roomba_GoDirect(-125, -125); //едь назад
+    statusDrive = stopDrive;     //останови управление движением
 
-    if (millis() - timeStateBump > 500)
+    if (millis() - timeStateBump > 500) //через 500мс
     {
-      timeStateBump = millis();
-      if (lightBumperLeft > lightBumperRight)
+      timeStateBump = millis();               //записываем сколько сейчас время на счетчике
+      if (lightBumperLeft > lightBumperRight) //если значения с левого святового больше чем с праваого
       {
-        statusNewDrive = rightNewDrive;
+        statusNewDrive = rightNewDrive; //то поставь статус "едь направо"
       }
-      else
-        statusNewDrive = leftNewDrive;
+      else                             //если нет
+        statusNewDrive = leftNewDrive; //то поставь статус "едь налево"
     }
   }
-  else if (statusNewDrive == leftNewDrive)
+  else if (statusNewDrive == leftNewDrive) //если статус налево
   {
-    roomba_GoDirect(125, -125);
-    statusDrive = stopDrive;
+    roomba_GoDirect(125, -125); //едь налево
+    statusDrive = stopDrive;    //останови управление движением
 
-    if (millis() - timeStateBump > 250)
+    if (millis() - timeStateBump > 250) //через 250мс
     {
-      statusNewDrive = forwardNewDrive;
-      statusDrive = startDrive;
+      statusNewDrive = forwardNewDrive; //поставь статус "вперед"
+      statusDrive = startDrive;         //запусти управление движением
     }
   }
-  else if (statusNewDrive == rightNewDrive)
+  else if (statusNewDrive == rightNewDrive) //если статус направо
   {
-    roomba_GoDirect(-125, 125);
-    statusDrive = stopDrive;
+    roomba_GoDirect(-125, 125); //едь направо
+    statusDrive = stopDrive;    //останови управление движением
 
-    if (millis() - timeStateBump > 300)
+    if (millis() - timeStateBump > 300) //через 300мс
     {
-      statusNewDrive = forwardNewDrive;
-      statusDrive = startDrive;
+      statusNewDrive = forwardNewDrive; //поставь статус "вперед"
+      statusDrive = startDrive;         //запусти управление движением
     }
   }
 
-  if (statusEncoder == forwardEncoder)
+  /*  if (statusEncoder == forwardEncoder)
   {
     roomba_GoDirectEncoders(90, 90);
     int32_t sumCountsEncoders = counterDifferenceEncoderLeft + counterDifferenceEncoderRight;
@@ -193,7 +193,7 @@ void roomba_Loop() //сама программа румбы
 
       //roomba_GoDirect(0, 0);
     }
-  }
+  } */
 
   counterDifferenceEncoderLeft = encoderCountsLeft - counterEncoderLeft;             //разница показателей левого энкодера
   counterDifferenceEncoderRight = encoderCountsRight - counterEncoderRight;          //разница показателей правого энкодера
@@ -203,111 +203,103 @@ void roomba_Loop() //сама программа румбы
 void roomba_SensorsLoop() //loop проверки сенсоров и взаимодействия с датчиками
 {
 
-  if (roomba_SensorsPackCheck())
+  if (roomba_SensorsPackCheck()) //если проверка прошла
   {
     //roomba_PrintSensors();
 
-    if (buttons == 1)
+    if (buttons == 1) //если нажата кнопка
     {
-      //songGood;
-      roomba_GoDirect(0, 0);
-      statusDrive = stopDrive;
-      statusEncoder = stopEncoder;
-      statusNewDrive = stopNewDrive;
+      //songGood; //воспроизводит звук
+      roomba_GoDirect(0, 0);         //останавливает движение румбы
+      statusDrive = stopDrive;       //останавливает управление движением
+      statusEncoder = stopEncoder;   //останавливает сатус управления энкодерами
+      statusNewDrive = stopNewDrive; //останавливает статус движения
     }
 
-    if (buttons == 2)
+    if (buttons == 2) //если нажата кнопка
     {
-      counterEncoderLeft = encoderCountsLeft;
+      /* counterEncoderLeft = encoderCountsLeft;
       counterEncoderRight = encoderCountsRight;
-      //statusEncoder = forwardEncoder;
-      statusNewDrive = forwardNewDrive;
+      //statusEncoder = forwardEncoder; */
+      statusNewDrive = forwardNewDrive; //статус движения на вперед (начинает жвижение румбы)
     }
 
-    if (buttons == 4)
+    if (buttons == 4) //если нажата кнопка
     {
-      songBad;
+      songBad; //воспроизводит звук
     }
 
-    if (buttons == 6)
+    if (buttons == 6) //если нажата кнопка
     {
-      roomba_Reset();
+      roomba_Reset(); //рестарт румбы
     }
 
     ///*
-    if (bumpsAndWheelDrops > 0)
+    if (bumpsAndWheelDrops > 0) //если бампер или поднятие румбы
     {
-      if (statusNewDrive != stopNewDrive or statusNewDrive != backNewDrive)
+      if (statusNewDrive != stopNewDrive or statusNewDrive != backNewDrive) //если статус движения не равны стопу и не равны назад, то
       {
-        timeStateBump = millis();
+        timeStateBump = millis(); //запищши значение таймера
       }
 
-      if (bumpsAndWheelDrops == 1)
+      if (bumpsAndWheelDrops == 1) //если бампер справа
       {
-        statusNewDrive = leftNewDrive;
+        statusNewDrive = leftNewDrive; //едь налево
       }
-      else if (bumpsAndWheelDrops == 2)
+      else if (bumpsAndWheelDrops == 2) //если бампер слева
       {
-        statusNewDrive = rightNewDrive;
+        statusNewDrive = rightNewDrive; //едь направо
       }
-      else
+      else //если ничего из этого (значит он стукнулся с обоих сторон, либо подняли)
       {
-        statusNewDrive = backNewDrive;
+        statusNewDrive = backNewDrive; //едь назад
       }
     }
 
-    if (statusDrive == startDrive)
+    if (statusDrive == startDrive) //если статус говорит о начале движения
     {
-      if (lightBumperLeft > 50 or lightBumperRight > 50)
+      if (lightBumperLeft > 50 or lightBumperRight > 50) //если датчики видят приближение справа или слева
       {
-        if (lightBumperLeft > 50 and lightBumperLeftCenter > 30)
+        if (lightBumperLeft > 50 and lightBumperLeftCenter > 30) //если оба датчика видят, но слева видит больше
         {
-          statusNewDrive = rightNewDrive;
+          statusNewDrive = rightNewDrive; //едь направо
         }
-        else
+        else if (lightBumperRight > 50 and lightBumperRightCenter > 30) //если оба датчика видят, но справа видит больше
         {
-          statusNewDrive = leftNewDrive;
-        }
-        if (lightBumperRight > 50 and lightBumperRightCenter > 30)
-        {
-          statusNewDrive = leftNewDrive;
-        }
-        else
-        {
-          statusNewDrive = rightNewDrive;
+          statusNewDrive = leftNewDrive; //едь направо
         }
       }
-      if (lightBumperLeftCenter > 30 or lightBumperRightCenter > 30)
+      if (lightBumperLeftCenter > 30 or lightBumperRightCenter > 30) //если спереди справа или слева видят препятствие
       {
-        if (statusNewDrive != stopNewDrive or statusNewDrive != backNewDrive)
+        if (statusNewDrive != stopNewDrive or statusNewDrive != backNewDrive) //если статус движения не равны стопу и не равны назад, то
         {
-          timeStateBump = millis();
+          timeStateBump = millis(); //запищши значение таймера
         }
 
-        if (lightBumperRight > 30 and lightBumperLeft > 30)
+        if (lightBumperRight > 30 and lightBumperLeft > 30) //если справа и слева видят препятствие
         {
-          if (lightBumperRight > 50 and lightBumperLeft > 50)
+          if (lightBumperRight > 50 and lightBumperLeft > 50) //если справа и слева видят препятствие близко
           {
-            statusNewDrive = backNewDrive;
+            statusNewDrive = backNewDrive; //статус назад
           }
-          if (lightBumperRight > 30)
+          if (lightBumperRight > 50) //если справа препятствие
           {
-            statusNewDrive = leftNewDrive;
+            statusNewDrive = leftNewDrive; //статус налево
           }
-          else
+          else //если слева препятствие
           {
-            statusNewDrive = rightNewDrive;
+            statusNewDrive = rightNewDrive; //статус направо
           }
         }
-        else
+        else //если справа или слева видят препятствие
         {
-          if (lightBumperLeft > lightBumperRight)
+          if (lightBumperLeft > lightBumperRight) //если слева больше чем справа
           {
-            statusNewDrive = rightNewDrive;
+            statusNewDrive = rightNewDrive; //статус направо
           }
-          else
+          else //если справа больше чем слева
           {
-            statusNewDrive = leftNewDrive;
+            statusNewDrive = leftNewDrive; //статус налево
           }
         }
       }
