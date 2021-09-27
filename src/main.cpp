@@ -11,10 +11,9 @@ void loop()
   roomba_Loop();
 }
 
-ISR(TIMER1_A) 
+ISR(TIMER4_A) 
 {
   roomba_SensorsLoop();
-  //ultrasonicSensorLoop();
 }
 
 void pinModeInit() {
@@ -34,6 +33,6 @@ void pinModeInit() {
   pinMode(ECHO_PIN_5, INPUT);
   pinMode(ECHO_PIN_6, INPUT);
   Serial.begin(9600);
-  Timer1.setPeriod(5000);
-  Timer1.enableISR();
+  Timer4.setPeriod(5000);
+  Timer4.enableISR();
 }

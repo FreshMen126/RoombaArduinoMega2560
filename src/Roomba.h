@@ -83,8 +83,8 @@ void roomba_InitSong();             //команда сохраняющая в �
 void roomba_SensorsLoop();          //loop проверки сенсоров и взаимодействия с датчиками
 void plate_LEDAlert();              //мигание светодиодом на плате
 void roomba_PrintSensors();         //транслирует данные с датчиков на терминал
-void lightBumperSensorCheck();       //проверяем насколько близко к румбе по датчикам и меняем статусы езды
-void ultrasonicSensorCheck(); //
+byte ultrasonicSensorCalculate (byte trigPin, byte echoPin);
+void ultrasonicSensorLoop();
 
 /*
 0 - all star шрек (куда его?)
