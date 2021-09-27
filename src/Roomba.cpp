@@ -82,9 +82,10 @@ int32_t counterDifferenceEncoderLeft = 0;  //переменная разницы
 int32_t counterDifferenceEncoderRight = 0; //переменная разницы показателей правого энкодера
 int32_t counterEncoderLeft = 0;            //переменная подсчета данных с энкодеров левый
 int32_t counterEncoderRight = 0;           //переменная подсчета данных с энкодеров правый
-int32_t differenceEncoders = 0;            //Переменна разницы показателей энкодеров
+int32_t differenceEncoders = 0;            //gеременна разницы показателей энкодеров
 int32_t distanceEncoders = 0;              //переменная дистанции по энкодерам
-int32_t rotationEncoders = 0;              // переменная угла поворота по энкодерам в градусах
+int32_t rotationEncoders = 0;              //переменная угла поворота по энкодерам в градусах
+extern byte ultrasonicRight, ultrasonicRightAngle, ultrasonicRightFront, ultrasonicLeftFront, ultrasonicLeftAngle, ultrasonicLeft;
 
 int16_t lastRight = 0;    //последние данные правого колеса
 int16_t lastLeft = 0;     //последние данные левого колеса
@@ -205,7 +206,7 @@ void roomba_SensorsLoop() //loop проверки сенсоров и взаим
 
   if (roomba_SensorsPackCheck()) //если проверка прошла
   {
-    //roomba_PrintSensors();
+    roomba_PrintSensors();
 
     if (buttons == 1) //если нажата кнопка
     {
@@ -258,51 +259,8 @@ void roomba_SensorsLoop() //loop проверки сенсоров и взаим
 
     if (statusDrive == startDrive) //если статус говорит о начале движения
     {
-      if (lightBumperLeft > 50 or lightBumperRight > 50) //если датчики видят приближение справа или слева
-      {
-        if (lightBumperLeft > 50 and lightBumperLeftCenter > 30) //если оба датчика видят, но слева видит больше
-        {
-          statusNewDrive = rightNewDrive; //едь направо
-        }
-        else if (lightBumperRight > 50 and lightBumperRightCenter > 30) //если оба датчика видят, но справа видит больше
-        {
-          statusNewDrive = leftNewDrive; //едь направо
-        }
-      }
-      if (lightBumperLeftCenter > 30 or lightBumperRightCenter > 30) //если спереди справа или слева видят препятствие
-      {
-        if (statusNewDrive != stopNewDrive or statusNewDrive != backNewDrive) //если статус движения не равны стопу и не равны назад, то
-        {
-          timeStateBump = millis(); //запищши значение таймера
-        }
-
-        if (lightBumperRight > 30 and lightBumperLeft > 30) //если справа и слева видят препятствие
-        {
-          if (lightBumperRight > 50 and lightBumperLeft > 50) //если справа и слева видят препятствие близко
-          {
-            statusNewDrive = backNewDrive; //статус назад
-          }
-          if (lightBumperRight > 50) //если справа препятствие
-          {
-            statusNewDrive = leftNewDrive; //статус налево
-          }
-          else //если слева препятствие
-          {
-            statusNewDrive = rightNewDrive; //статус направо
-          }
-        }
-        else //если справа или слева видят препятствие
-        {
-          if (lightBumperLeft > lightBumperRight) //если слева больше чем справа
-          {
-            statusNewDrive = rightNewDrive; //статус направо
-          }
-          else //если справа больше чем слева
-          {
-            statusNewDrive = leftNewDrive; //статус налево
-          }
-        }
-      }
+      lightBumperSensorCheck();
+      ultrasonicSensorCheck();
     }
     //*/
   }
@@ -598,9 +556,8 @@ byte roomba_SensorsPack(byte pack) //то, что возвращают сенс�
 
 bool roomba_SensorsPackCheck() //принимаем данные с датчиков и проверяем
 {
-  byte sensorID = 0; //вводим переменную, которая будет хранить id датчика
-  byte total = 0;    //вводим переменную, которая будет хранить общую сумму (должна равна быть 256)
-
+  byte sensorID = 0;      //вводим переменную, которая будет хранить id датчика
+  byte total = 0;         //вводим переменную, которая будет хранить общую сумму (должна равна быть 256)
   if (Roomba.available()) //если есть доступные данные
   {
 
@@ -635,6 +592,7 @@ bool roomba_SensorsPackCheck() //принимаем данные с датчик
         lightBumperLeftCenter = checkLightBumperLeftCenter;   //из проверки в истину
         lightBumperRightCenter = checkLightBumperRightCenter; //из проверки в истину
         lightBumperRight = checkLightBumperRight;             //из проверки в истину
+        ultrasonicSensorLoop();
 
         return true; //возвращаем 1
       }
@@ -652,6 +610,139 @@ void roomba_PlaySong(byte song) //команда запуска музыки о�
   Roomba.write(141);         //команда запуски музыки
   song = _CLAMP(song, 0, 4); //ограничение от 0 до 4
   Roomba.write(song);        //устанавливаем музыку
+}
+
+void lightBumperSensorCheck() //проверяем насколько близко к румбе по датчикам и меняем статусы езды
+{
+  if (lightBumperLeft > 50 or lightBumperRight > 50) //если датчики видят приближение справа или слева
+  {
+    if (lightBumperLeft > 50 and lightBumperLeftCenter > 30) //если оба датчика видят, но слева видит больше
+    {
+      statusNewDrive = rightNewDrive; //едь направо
+    }
+    else if (lightBumperRight > 50 and lightBumperRightCenter > 30) //если оба датчика видят, но справа видит больше
+    {
+      statusNewDrive = leftNewDrive; //едь направо
+    }
+  }
+
+  if (lightBumperLeftCenter > 30 or lightBumperRightCenter > 30) //если спереди справа или слева видят препятствие
+  {
+    if (statusNewDrive != stopNewDrive or statusNewDrive != backNewDrive) //если статус движения не равны стопу и не равны назад, то
+    {
+      timeStateBump = millis(); //запищши значение таймера
+    }
+
+    if (lightBumperRight > 30 and lightBumperLeft > 30) //если справа и слева видят препятствие
+    {
+      if (lightBumperRight > 50 and lightBumperLeft > 50) //если справа и слева видят препятствие близко
+      {
+        statusNewDrive = backNewDrive; //статус назад
+      }
+      if (lightBumperRight > 50) //если справа препятствие
+      {
+        statusNewDrive = leftNewDrive; //статус налево
+      }
+      else //если слева препятствие
+      {
+        statusNewDrive = rightNewDrive; //статус направо
+      }
+    }
+    else //если справа или слева видят препятствие
+    {
+      if (lightBumperLeft > lightBumperRight) //если слева больше чем справа
+      {
+        statusNewDrive = rightNewDrive; //статус направо
+      }
+      else //если справа больше чем слева
+      {
+        statusNewDrive = leftNewDrive; //статус налево
+      }
+    }
+  }
+}
+
+void ultrasonicSensorCheck()
+{
+  if (ultrasonicLeftAngle < 10 or ultrasonicLeftAngle < 10) //если датчики видят приближение справа или слева
+  {
+    if (ultrasonicLeftAngle < 8 and ultrasonicLeftAngle < 10) //если оба датчика видят, но слева видит больше
+    {
+      statusNewDrive = rightNewDrive; //едь направо
+    }
+    else if (ultrasonicLeftAngle < 10 and ultrasonicLeftAngle < 8) //если оба датчика видят, но справа видит больше
+    {
+      statusNewDrive = leftNewDrive; //едь направо
+    }
+  }
+
+  if (ultrasonicLeftFront < 10 or ultrasonicLeftFront < 10) //если спереди справа или слева видят препятствие
+  {
+    if (statusNewDrive != stopNewDrive or statusNewDrive != backNewDrive) //если статус движения не равны стопу и не равны назад, то
+    {
+      timeStateBump = millis(); //запищши значение таймера
+    }
+
+    if (ultrasonicLeft < 10 and ultrasonicRight < 10) //если справа и слева видят препятствие
+    {
+      if (ultrasonicRight < 7 and ultrasonicLeft < 7) //если справа и слева видят препятствие близко
+      {
+        statusNewDrive = backNewDrive; //статус назад
+      }
+      if (ultrasonicLeft < 7) //если справа препятствие
+      {
+        statusNewDrive = leftNewDrive; //статус налево
+      }
+      else //если слева препятствие
+      {
+        statusNewDrive = rightNewDrive; //статус направо
+      }
+    }
+    else //если справа или слева видят препятствие
+    {
+      if (ultrasonicLeft > ultrasonicRight) //если слева больше чем справа
+      {
+        statusNewDrive = rightNewDrive; //статус направо
+      }
+      else //если справа больше чем слева
+      {
+        statusNewDrive = leftNewDrive; //статус налево
+      }
+    }
+  }
+}
+
+void roomba_PrintSensors() //транслирует данные с датчиков на терминал
+{
+  int PrintArray[] =
+      {
+          bumpsAndWheelDrops,
+          buttons,
+          //angle,
+          //wallSignal,
+          //cliffSignalLeft,
+          //cliffSignalFrontLeft,
+          //cliffSignalFrontRight,
+          //cliffSignalRight,
+          encoderCountsLeft,
+          encoderCountsRight,
+          lightBumper,
+          lightBumperLeft,
+          lightBumperLeftCenter,
+          lightBumperRightCenter,
+          lightBumperRight,
+          ultrasonicLeft,
+          ultrasonicLeftAngle,
+          ultrasonicLeftFront,
+          ultrasonicRight,
+          ultrasonicRightAngle,
+          ultrasonicRightFront};
+  for (byte i = 0; i < sizeof(streamArray); i++)
+  {
+    Serial.print(PrintArray[i]);
+    Serial.print("   ");
+  }
+  Serial.println("");
 }
 
 void roomba_InitSong() //команда сохраняющая в памяти музыку (инициализация)
@@ -863,33 +954,6 @@ void roomba_InitSong() //команда сохраняющая в памяти �
 
   Roomba.write(43); //G3
   Roomba.write(24); //задержка
-}
-
-void roomba_PrintSensors() //транслирует данные с датчиков на терминал
-{
-  int PrintArray[] =
-      {
-          bumpsAndWheelDrops,
-          buttons,
-          //angle,
-          //wallSignal,
-          //cliffSignalLeft,
-          //cliffSignalFrontLeft,
-          //cliffSignalFrontRight,
-          //cliffSignalRight,
-          encoderCountsLeft,
-          encoderCountsRight,
-          lightBumper,
-          lightBumperLeft,
-          lightBumperLeftCenter,
-          lightBumperRightCenter,
-          lightBumperRight};
-  for (byte i = 0; i < sizeof(streamArray); i++)
-  {
-    Serial.print(PrintArray[i]);
-    Serial.print("   ");
-  }
-  Serial.println("");
 }
 
 void plate_LEDAlert() //мигание светодиодом на плате
